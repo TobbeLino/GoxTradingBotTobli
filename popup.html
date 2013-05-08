@@ -1,12 +1,14 @@
 <html>
 <head>
+<script type="text/javascript" src="js/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="js/jquery.sparkline.min.js"></script>
 <style>
-div {
+#main {
 	overflow:auto;
 	width:310px;
 	max-height:500px;
 }
-table {
+#tab {
 	border-width: 1px;
 	border-spacing: 2px;
 	border-style: outset;
@@ -43,7 +45,7 @@ td.c {
 	font-size:11px;
 }
 td.d {
-	padding:4px 3px;
+	padding:4px 0 ;
 	text-align: center;
 	background-color: #d0d0d0;
 	color: black;
@@ -54,10 +56,40 @@ td.err {
 	background-color: #e0e0ff;
 	color: red;
 }
+#tradingStatus {
+	line-height:16px
+}
+.chartTooltip{
+	position: absolute;
+	left: 0px;
+	top: 0px;
+	visibility: hidden;
+	background: rgb(0, 0, 0) transparent;
+	background-color: rgba(0,0,0,0.6);
+	filter:progid:DXImageTransform.Microsoft.gradient(startColorstr=#99000000, endColorstr=#99000000);
+	-ms-filter: "progid:DXImageTransform.Microsoft.gradient(startColorstr=#99000000, endColorstr=#99000000)";
+	color: white;
+	font: 10px arial, san serif;
+	text-align: left;
+	white-space: nowrap;
+	padding: 5px;
+	border: 1px solid black;
+	z-index: 10000;
+	max-width:130px;
+	overflow:hidden;
+}
+.tooltipTableCell {
+	color: white;
+	font: 10px arial, san serif;
+	text-align: left;
+	white-space: nowrap;
+	width:100%;
+	padding:2px;
+}
 </style>
 </head>
 <body>
-<div>
+<div id="main">
 	<table id="tab" cellpadding="1" cellspacing="0" border="1">
 		<tr id="nobalan">
 			<td class="err" colspan="5">
@@ -68,13 +100,23 @@ td.err {
 		<tr id="balance">
 			<td class="c" colspan="5">
 				Balance = <span id="btc">0.00</span> BTC + <span id="usd">0.00</span><br>
-			</td>
+			</td width=20>
 		</tr>
 		<tr id="settings">
 			<td class="d" colspan="5">
 				<span id="tradingStatus"></span>
+				<span style="position:relative;float:right">
+					<img src="chart.png" id="chartLink" alt="Chart" title="Chart" style="cursor:pointer;position:absolute;right:17px;margin:0 5px 0 0" border=0 width=15 height=12>
+					<a href="options.html" title="Options" target="bot_options" style="position:absolute;right:4px;">
+						<img src="options.png" alt="Options" title="Options" style="margin:-1px 0 0 0" border=0 width=13 height=13>
+					</a>
+				</span><br>
 				Sample interval: <span id="int"></span>&nbsp;&nbsp;&nbsp;&nbsp;Trade after: <span id="ticks"></span><br>
-				Buy threshold: <span id="buyTres"></span>%&nbsp;&nbsp;&nbsp;&nbsp;Sell threshold=<span id="sellTres"></span>%
+				Buy threshold: <span id="buyTres"></span>%&nbsp;&nbsp;&nbsp;&nbsp;Sell threshold=<span id="sellTres"></span>%<br>
+				<span id="chart" style="width:100%;box-sizing:border-box;display:none;height:110px;background-color:#F0F0F0;border-top:1px solid gray;margin:6px 0 -4px 0;padding:4px 0">
+					<span id="EMAChart" style="max-width:310px;height:100px;box-sizing:border-box;margin:0">Loading..</span>
+					<div id="tooltipContiner" style="max-width:50px"></div>
+				</span>
 			</td>
 		</tr>
 		<tr>

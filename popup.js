@@ -1,4 +1,8 @@
 var bp = chrome.extension.getBackgroundPage();
+var chartVisible=false;
+var nowDate;
+var nowDateStr;
+
 function padit(d) {return d<10 ? '0'+d.toString() : d.toString()};
 function refreshtable() {
 	const wds = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
@@ -21,13 +25,13 @@ function refreshtable() {
 		
 	document.getElementById("buyTres").innerHTML=bp.MinBuyThreshold;
 	document.getElementById("sellTres").innerHTML=bp.MinSellThreshold;
-	document.getElementById("tradingStatus").innerHTML=(bp.tradingEnabled==1?"<span style=\"color:#008000\"><b>Trading is enabled</b></span><br>":"<span style=\"color:#A00000\"><b>Trading is disabled</b></span><br>");
+	document.getElementById("tradingStatus").innerHTML=(bp.tradingEnabled==1?"<span style=\"color:#008000\"><b>Trading is enabled</b></span>":"<span style=\"color:#A00000\"><b>Trading is disabled</b></span>");
 		
 	while (tab.rows.length>4)
 		tab.deleteRow(4);
 		
-	var nowDate=new Date();
-	var nowDateStr=nowDate.getFullYear()+"-"+padit(nowDate.getMonth()+1)+"-"+padit(nowDate.getDate());
+	nowDate=new Date();
+	nowDateStr=nowDate.getFullYear()+"-"+padit(nowDate.getMonth()+1)+"-"+padit(nowDate.getDate());
 
 	var displayLines=Math.min(bp.H1.length,bp.LogLines);
 	if (bp.updateinprogress) { // && bp.H1.length>bp.LogLines) {
@@ -40,15 +44,18 @@ function refreshtable() {
 		c.id="loadCell";
 	} else { // && bp.H1.length>bp.LogLines) {
 		//for (var i=bp.H1.length-bp.LogLines; i<bp.H1.length; i++) {
+		if (bp.emaLong==null || bp.emaLong.length<bp.H1.length || bp.emaShort==null || bp.emaShort.length<bp.H1.length) {
+			bp.refreshEMA(true);
+		}
+		
 		for (var i=bp.H1.length-displayLines; i<bp.H1.length; i++) {
 			var el = bp.emaLong[i];
 			var es = bp.emaShort[i];
 			var perc = 100 * (es-el) / ((es+el)/2);
 			var r=tab.insertRow(4);
 			//var ti=new Date(bp.tim[i]*3600*1000)
-			var ti=new Date(bp.tim[i]*60*1000);
-			r.title=wds[ti.getDay()];
 			var d=new Date(bp.tim[i]*60*1000);
+			r.title=wds[d.getDay()];
 			var dateStr=d.getFullYear()+"-"+padit(d.getMonth()+1)+"-"+padit(d.getDate());
 			var date=d.getDate()+"/"+(d.getMonth()+1)+" ";
 			//r.style.backgroundColor=bcols[((bp.tim[i]+1)/24)&1]
@@ -85,6 +92,7 @@ function refreshtable() {
 		document.getElementById("usd").innerHTML=bp.fiat.toFixed(2)+" "+ bp.currency;
 		document.getElementById("btc").innerHTML=bp.BTC.toFixed(2);
 	}
+	redrawChart();
 }
 
 function popupUpdateCounter() {
@@ -92,8 +100,149 @@ function popupUpdateCounter() {
 	if (o) {
 		o.innerHTML="&nbsp;<br>Fetching trading data - please wait...<br>("+bp.H1.length+" of "+bp.MaxSamplesToKeep+" samples loaded)<br>&nbsp;";
 	}
+	redrawChart();
+}
+
+
+
+function redrawChart() {
+	if (chartVisible) {
+		
+		nowDate=new Date();
+		nowDateStr=nowDate.getFullYear()+"-"+padit(nowDate.getMonth()+1)+"-"+padit(nowDate.getDate());
+
+		var chartMinY=bp.H1[0];
+		var chartMaxY=bp.H1[0];
+		for (var i=0;i<bp.H1.length;i++) {
+			if (chartMinY>bp.H1[i])
+				chartMinY=bp.H1[i];
+			if (chartMaxY<bp.H1[i])
+				chartMaxY=bp.H1[i];
+			
+			try {
+				if (chartMinY>bp.emaShort[i])
+					chartMinY=bp.emaShort[i];
+				if (chartMaxY<bp.emaShort[i])
+					chartMaxY=bp.emaShort[i];
+	
+				if (chartMinY>bp.emaLong[i])
+					chartMinY=bp.emaLong[i];
+				if (chartMaxY<bp.emaLong[i])
+					chartMaxY=bp.emaLong[i];
+			} catch (e) {
+			}
+		}
+
+
+    // settings: http://omnipotent.net/jquery.sparkline/#s-docs
+    $('#EMAChart').sparkline(bp.H1,{
+	    type: 'line',
+	    lineColor: '#0000FF',
+	    fillColor: false,
+	    lineWidth: 2,
+	    minSpotColor: false,
+	    maxSpotColor: false,
+	    spotColor: false,
+	    composite: false,
+	    width: '95%',
+	    height: '100px',
+	    tooltipContainer: document.getElementById("chart"),
+	    tooltipClassname: 'chartTooltip',
+//	    tooltipPrefix: 'Price: ',
+//	    numberFormatter: formatChartNumbers,
+	    highlightLineColor: '#CCC',
+	    highlightSpotColor: '#000',
+	    xvalues: bp.tim,
+	    tooltipFormatter: formatFirstTooltip,
+	    chartRangeMin: chartMinY,
+	    chartRangeMax: chartMaxY
+		});
+		if (bp.emaShort.length>=bp.H1.length) {
+			$('#EMAChart').sparkline(bp.emaShort,{
+				lineColor: '#008800',			
+				fillColor: false,
+				composite: true,
+				width: '95%',
+				lineWidth: 1,
+		    minSpotColor: false,
+		    maxSpotColor: false,
+				spotColor: false,
+//				tooltipPrefix: 'EMA'+bp.EmaShortPar+': ',
+//				numberFormatter: formatChartNumbers,
+				highlightLineColor: '#CCC',
+				highlightSpotColor: '#000',
+				xvalues: bp.tim,
+				tooltipFormatter: formatEMAShortTooltip,
+		    chartRangeMin: chartMinY,
+		    chartRangeMax: chartMaxY				
+			});
+		}
+		if (bp.emaLong.length>=bp.H1.length) {
+			$('#EMAChart').sparkline(bp.emaLong,{
+				lineColor: '#B00000',
+				fillColor: false,
+				composite: true,
+				width: '95%',
+				lineWidth: 1,
+		    minSpotColor: false,
+		    maxSpotColor: false,
+				spotColor: false,
+				tooltipPrefix: 'EMA'+bp.EmaLongPar+': ',
+				numberFormatter: formatChartNumbers,
+				highlightLineColor: '#CCC',
+				highlightSpotColor: '#000',
+				xvalues: bp.tim,
+				tooltipFormatter: formatEMALongTooltip,
+		    chartRangeMin: chartMinY,
+		    chartRangeMax: chartMaxY				
+			});
+		}
+	}
+}
+
+function formatChartNumbers(v) {
+	return v.toFixed(3);
+}
+
+function formatFirstTooltip(sp, options, fields){
+	var d=new Date(fields.x*60*1000);
+	var dateStr=d.getFullYear()+"-"+padit(d.getMonth()+1)+"-"+padit(d.getDate());
+	//var date=d.getDate()+"/"+(d.getMonth()+1)+" ";
+	var t=(dateStr!=nowDateStr?dateStr:"Today")+" "+padit(d.getHours()) + ":"+padit(d.getMinutes());
+  return '<div align="center">'+t+ '<table width="100%" border="0"><tr><td align="left" class="tooltipTableCell"><span style="color: '+fields.color+'">&#9679;</span> Price: '+formatChartNumbers(fields.y)+'<br>';
+}
+
+var lastEmaTime=0;
+var lastEmaShort=0;
+function formatEMAShortTooltip(sp, options, fields){
+	lastEmaTime=fields.x;
+	lastEmaShort=fields.y;	
+  return '<span style="color: '+fields.color+'">&#9679;</span> EMA'+bp.EmaShortPar+': '+formatChartNumbers(fields.y)+'<br>';
+}
+
+function formatEMALongTooltip(sp, options, fields){
+	var trend='?';
+	if (lastEmaTime==fields.x)
+		trend=(fields.y<lastEmaShort?'<span style="font-weight:bold;color:#6F6">UP</span>':(fields.y>lastEmaShort?'<span style="font-weight:bold;color:#F66">DOWN</span>':'none'));
+  return '<span style="color: '+fields.color+'">&#9679;</span> EMA'+bp.EmaLongPar+': '+formatChartNumbers(fields.y)+'</td></tr></table>Trend: '+trend;
+}
+
+
+function toggleChart() {
+	if (document.getElementById("chart").style.display=="none") {
+		document.getElementById("chart").style.display="block";
+		chartVisible=true;
+	} else {
+		document.getElementById("chart").style.display="none";
+		chartVisible=false;
+	}
+	redrawChart();
 }
 
 refreshtable();
 bp.popupRefresh=refreshtable;
 bp.popupUpdateCounter=popupUpdateCounter;
+
+document.addEventListener('DOMContentLoaded', function() {
+	chartLink.addEventListener('click', function(){toggleChart()});
+})

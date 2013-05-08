@@ -240,6 +240,8 @@ function updateH1(reset) { // Added "reset" parameter to clear the H1 data - sho
 		//console.log("updateH1(): reset H1 data (Interval has changed)");
 		H1 = [];
 		tim = [];
+		emaLong = [];
+		emaShort = [];		
 		bootstrap = 1;
 		chrome.browserAction.setBadgeBackgroundColor({color:[128, 128, 128, 50]});
 	}
