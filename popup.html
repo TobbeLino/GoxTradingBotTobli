@@ -1,0 +1,90 @@
+<html>
+<head>
+<style>
+div {
+	overflow:auto;
+	width:310px;
+	max-height:500px;
+}
+table {
+	border-width: 1px;
+	border-spacing: 2px;
+	border-style: outset;
+	border-color: gray;
+	border-collapse:collapse;
+	background-color: white;
+	font-size: 14px;
+	width: 100%;
+}
+th {
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size:10px;
+	white-space: nowrap;
+	text-align: center;
+	background-color: black;
+	color: white;
+	font-weight:bold;
+	height:18px;
+}
+td {
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size:10px;
+	white-space: nowrap;
+	text-align: right;
+	width: 50px;
+	padding-right: 3px;
+}
+td.c {
+	padding:4px 3px;
+	text-align: center;
+	background-color: #d0d0d0;
+	color: blue;
+	font-weight:bold;
+	font-size:11px;
+}
+td.d {
+	padding:4px 3px;
+	text-align: center;
+	background-color: #d0d0d0;
+	color: black;
+	font-size:11px;
+}
+td.err {
+	text-align: center;
+	background-color: #e0e0ff;
+	color: red;
+}
+</style>
+</head>
+<body>
+<div>
+	<table id="tab" cellpadding="1" cellspacing="0" border="1">
+		<tr id="nobalan">
+			<td class="err" colspan="5">
+				Problem accessing MtGox account.<br>
+				Go check the <a href="options.html" target="_blank">Options page</a>.
+			</td>
+		</tr>
+		<tr id="balance">
+			<td class="c" colspan="5">
+				Balance = <span id="btc">0.00</span> BTC + <span id="usd">0.00</span><br>
+			</td>
+		</tr>
+		<tr id="settings">
+			<td class="d" colspan="5">
+				<span id="tradingStatus"></span>
+				Sample interval: <span id="int"></span>&nbsp;&nbsp;&nbsp;&nbsp;Trade after: <span id="ticks"></span><br>
+				Buy threshold: <span id="buyTres"></span>%&nbsp;&nbsp;&nbsp;&nbsp;Sell threshold=<span id="sellTres"></span>%
+			</td>
+		</tr>
+		<tr>
+			<th>Time</th>
+			<th>Price</th>
+			<th colspan="3">EMA(<span id="emas">a</span>)/EMA(<span id="emal">b</span>)</th>
+		</tr>
+	</table>
+</div>
+
+<script src="popup.js"></script>
+</body>
+</html>
