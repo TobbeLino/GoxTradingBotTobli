@@ -247,7 +247,8 @@ function updateH1(reset) { // Added "reset" parameter to clear the H1 data - sho
 	//var hour_fetch
 	var minute_fetch;
 	//var hour_now = parseInt( (new Date()).getTime() / 3600000 )
-	var minute_now = parseInt( (new Date()).getTime() /   60000 );
+	//var minute_now = parseInt( (new Date()).getTime() /   60000 );
+	var minute_now = parseInt((new Date()).getTime() / (tradingIntervalMinutes*60*1000)) * tradingIntervalMinutes; // Fix trading samples to whole hours...
 	
 	if (tim.length>0) {
 		minute_fetch = tim[tim.length-1] + tradingIntervalMinutes;
