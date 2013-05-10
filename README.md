@@ -54,6 +54,9 @@ Click the link after Inspect views: "_generated_background_page.html" next to th
 Changelog
 =========
 
+0.2.1.3
+- Added cache-busting for calls fetching trades
+
 0.2.1.2
 - Fixed typos
 - Better trend indicator i tooltip on chart

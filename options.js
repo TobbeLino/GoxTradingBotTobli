@@ -84,7 +84,7 @@ function save() {
 		document.getElementById("emal").value=el;
 	}
 
-	var currency=document.getElementById("currency").value;
+	var currency=document.getElementById("currency").value.toUpperCase();
 	var keepBTC=parseFloat(document.getElementById("keepBTC").value);
 //	var keepFiat=parseFloat(document.getElementById("keepFiat").value);
 	if (isNaN(keepBTC) || keepBTC<0) {

@@ -1,5 +1,7 @@
 const MaxSamplesToKeep = 144;
-
+const	MtGoxAPI2BaseURL = 'https://data.mtgox.com/api/2/';
+const useAPIv2=false;
+ 
 var ApiKey = localStorage.ApiKey || '';
 var ApiSec = localStorage.ApiSec || '';
 
@@ -10,7 +12,6 @@ var tickCount = localStorage.tickCount || 1;
 var LogLines = parseInt(localStorage.LogLines || 12);
 var EmaShortPar = parseInt(localStorage.EmaShortPar || 10);
 var EmaLongPar = parseInt(localStorage.EmaLongPar || 21);
-//var MaxMinutesBack = parseInt(localStorage.MaxMinutesBack || (MaxSamplesToKeep*tradingIntervalMinutes));
 var MinBuyThreshold = parseFloat(localStorage.MinBuyThreshold || 0.25);
 var MinSellThreshold = parseFloat(localStorage.MinSellThreshold || 0.25);
 var currency = localStorage.currency || 'USD'; 							// Fiat currency to trade with
@@ -50,8 +51,14 @@ function schedupdate(t) {
 	utimer = setTimeout(update,t);
 }
 
-function update() {
-	mtgoxpost("info.php", [],
+function update() {	
+	var path;
+	if (useAPIv2)
+		path="BTC"+currency+"/money/info";
+	else
+		path="info.php";
+		
+	mtgoxpost(path, [],
 		function(e) {
 			console.log("info error", e);
 			chrome.browserAction.setTitle({title: "Error executing info" });
@@ -63,6 +70,9 @@ function update() {
 			fiat = Number.NaN;
 			try {
 				var rr = JSON.parse(d.currentTarget.responseText);
+				if (useAPIv2)
+					rr=rr.data;
+					
 				if (typeof(rr.Wallets[currency].Balance.value)=="undefined") {
 					chrome.browserAction.setTitle({title: rr.error });
 				} else {
@@ -80,24 +90,23 @@ function update() {
 	)
 }
 
-function signdata(data) {
-	var shaObj = new jsSHA(data,"ASCII");
-	var SecretKey = atob(ApiSec);
-	var hmac = shaObj.getHMAC(SecretKey, "ASCII", "SHA-512", "B64");
-	while (hmac.length%4) hmac+='='; // workaround for the B64 too short bug
-	return hmac;
+function hmac_512(message, secret) {
+    var shaObj = new jsSHA(message, "TEXT");
+    var hmac = shaObj.getHMAC(secret, "B64", "SHA-512", "B64");
+    return hmac;
 }
 
-function mtgoxpost(page, params, ef, df) {
+function mtgoxpost(path, params, ef, df) {
 	var req = new XMLHttpRequest();
-	req.open("POST", "https://mtgox.com/api/0/"+page, true);
+	req.open("POST", (useAPIv2 ? MtGoxAPI2BaseURL : "https://mtgox.com/api/0/")+path, true);
+	
 	req.onerror = ef;
 	req.onload = df;
 	var data = "nonce="+((new Date()).getTime()*1000);
 	for (var i in params)
 		data+="&"+params[i];
 	data = encodeURI(data);
-	var hmac = signdata(data);
+	var	hmac=hmac_512((useAPIv2?path+'\0'+data:data),ApiSec);
 	req.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
 	req.setRequestHeader("Rest-Key", ApiKey);
 	req.setRequestHeader("Rest-Sign", hmac);
@@ -183,7 +192,11 @@ function refreshEMA(reset) {
 					(tickCount==3 && (dif2>MinBuyThreshold) && (dif3>MinBuyThreshold))) {
 				if (tradingEnabled==1) {
 					console.log("BUY! (EMA("+EmaShortPar+")/EMA("+EmaLongPar+")>"+MinBuyThreshold+"% for "+tickCount+" or more ticks)");
-					mtgoxpost("buyBTC.php", ['Currency='+currency,'amount=1000'], one, onl);
+					//mtgoxpost("buyBTC.php", ['Currency='+currency,'amount=1000'], one, onl);
+					if (useAPIv2)
+						mtgoxpost("BTC"+currency+"/money/order/add", ['type=bid','amount_int='+(1000*100000000).toString()], one, onl);
+					else
+						mtgoxpost("buyBTC.php", ['Currency='+currency,'amount=1000'], one, onl);
 				} else {
 					console.log("Simulated BUY! (EMA("+EmaShortPar+")/EMA("+EmaLongPar+")>"+MinBuyThreshold+"% for "+tickCount+" or more ticks) - However, since trading is disabled, NO trade was actually made");
 				}
@@ -194,15 +207,18 @@ function refreshEMA(reset) {
 	} else if (dif1<-MinSellThreshold) {
 		chrome.browserAction.setBadgeBackgroundColor({color:[128, 0, 0, 200]});
 		if (BTC>keepBTC) {
-			var s = BTC - keepBTC;
+			var amount = BTC - keepBTC;
 			//if (getemadif(H1.length-2) < -MinSellThreshold) { //toli: not ready to change this yet...
 			if ((tickCount==1) ||
 					(tickCount==2 && (dif2<-MinSellThreshold)) ||
 					(tickCount==3 && (dif2<-MinSellThreshold) && (dif3<-MinSellThreshold))) {
-			
+
 				if (tradingEnabled==1) {
 					console.log("SELL! (EMA("+EmaShortPar+")/EMA("+EmaLongPar+")<-"+MinSellThreshold+"% for "+tickCount+" or more ticks)");
-					mtgoxpost("sellBTC.php", ['Currency='+currency,'amount='+s.toString()], one, onl);
+					if (useAPIv2)
+						mtgoxpost("BTC"+currency+"/money/order/add", ['type=ask','amount_int='+Math.round(amount*100000000).toString()], one, onl);
+					else
+						mtgoxpost("sellBTC.php", ['Currency='+currency,'amount='+amount.toString()], one, onl);
 				} else {
 					console.log("Simulated SELL! (EMA("+EmaShortPar+")/EMA("+EmaLongPar+")<-"+MinSellThreshold+"% for "+tickCount+" or more ticks) - However, since trading is disabled, NO trade was actually made");
 				}
@@ -266,9 +282,12 @@ function updateH1(reset) { // Added "reset" parameter to clear the H1 data - sho
 
 	var req = new XMLHttpRequest();
 
-	//var url = "https://data.mtgox.com/api/0/data/getTrades.php?Currency="+currency+"&since="+(hour_fetch*3600*1000000).toString()
 	var since=(minute_fetch*60*1000000).toString();
-	var url = "https://data.mtgox.com/api/0/data/getTrades.php?Currency="+currency+"&since="+since;
+	var url;
+	if (useAPIv2)
+		url = MtGoxAPI2BaseURL+"BTC"+currency+"/money/trades/fetch?since="+since+"&nonce="+((new Date()).getTime()*1000);
+	else
+		url = "https://data.mtgox.com/api/0/data/getTrades.php?Currency="+currency+"&since="+since+"&nonce="+((new Date()).getTime()*1000);
 
 	req.onerror = function(e) {
 		console.log("getTrades error", e, "-repeat");
@@ -281,6 +300,9 @@ function updateH1(reset) { // Added "reset" parameter to clear the H1 data - sho
 		try {
 			//console.log(req.responseText)
 			var trs = JSON.parse(req.responseText);
+			if (useAPIv2)
+				trs=trs.data;
+				
 			//console.log(trs.length)
 			if (trs.length > 0) {
 				tim.push(minute_fetch);
@@ -299,9 +321,11 @@ function updateH1(reset) { // Added "reset" parameter to clear the H1 data - sho
 				//hour_fetch++
 				minute_fetch=minute_fetch+tradingIntervalMinutes;
 				if (minute_fetch <= minute_now) {
-					//url = "https://data.mtgox.com/api/0/data/getTrades.php?Currency="+currency+"&since="+(hour_fetch*3600*1000000).toString()
 					since=(minute_fetch*60*1000000).toString();
-					url = "https://data.mtgox.com/api/0/data/getTrades.php?Currency="+currency+"&since="+since;
+					if (useAPIv2)
+						url = MtGoxAPI2BaseURL+"BTC"+currency+"/money/trades/fetch?since="+since+"&nonce="+((new Date()).getTime()*1000);
+					else
+						url = "https://data.mtgox.com/api/0/data/getTrades.php?Currency="+currency+"&since="+since+"&nonce="+((new Date()).getTime()*1000);
 					
 					get_url(req, url);
 					done = false;
