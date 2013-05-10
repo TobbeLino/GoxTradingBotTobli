@@ -348,4 +348,4 @@ schedupdate(10);
 //updateH1();
 setTimeout(function(){updateH1(false);}, 2*1000); // toli: Delay first updateH1() to allow user info to be fetched first... 
 //setInterval(updateH1, 3*60*1000) // recheck every 3 minutes
-setInterval(function(){updateH1(false);}, 150*1000); // toli: recheck every 2.5 minutes (should be a multiple of any trading interval)
+setInterval(function(){updateH1(false);}, 60*1000); // toli: recheck every minute (should be a multiple of any trading interval)

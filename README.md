@@ -32,8 +32,10 @@ Enhanced features of this modified bot
  * Detect and eliminate peaks/invalid samples from MtGox
 
  * Possibility to disable actual trading (the bot does everything, except the actual trading). Good for testing if e.g. a changed sample interval will cause a trend switch and would trigger an immediate trade.
-
  
+ * Show chart with price and EMA-values
+
+
 	
 Installation
 ------------
@@ -47,6 +49,20 @@ Installation
 From the extensions page in Chrome, you can also open the console to se some logging I you want:
 Click the link after Inspect views: "_generated_background_page.html" next to the extension, and pick the Console-tab
 
+
+
+Changelog
+=========
+
+0.2.1.2
+- Fixed typos
+- Better trend indicator i tooltip on chart
+
+0.2.1.1
+- Added chart
+
+0.2.1.0
+- Initial release
 
 
 Donations

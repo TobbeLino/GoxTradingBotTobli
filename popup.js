@@ -19,7 +19,7 @@ function refreshtable() {
 		document.getElementById("int").innerHTML=bp.tradingIntervalMinutes+" min";
 
 	if (bp.tickCount>1)
-		document.getElementById("ticks").innerHTML=bp.tickCount+ "samples"
+		document.getElementById("ticks").innerHTML=bp.tickCount+" samples"
 	else
 		document.getElementById("ticks").innerHTML="1 sample";
 		
@@ -111,6 +111,7 @@ function redrawChart() {
 		nowDate=new Date();
 		nowDateStr=nowDate.getFullYear()+"-"+padit(nowDate.getMonth()+1)+"-"+padit(nowDate.getDate());
 
+		// Calculate the chart scale (max/min of y-value)
 		var chartMinY=bp.H1[0];
 		var chartMaxY=bp.H1[0];
 		for (var i=0;i<bp.H1.length;i++) {
@@ -130,6 +131,7 @@ function redrawChart() {
 				if (chartMaxY<bp.emaLong[i])
 					chartMaxY=bp.emaLong[i];
 			} catch (e) {
+				// Exception - probably because the length of emaShort or emaLong is less that H1 - no big deal...
 			}
 		}
 
@@ -148,12 +150,10 @@ function redrawChart() {
 	    height: '100px',
 	    tooltipContainer: document.getElementById("chart"),
 	    tooltipClassname: 'chartTooltip',
-//	    tooltipPrefix: 'Price: ',
-//	    numberFormatter: formatChartNumbers,
+	    tooltipFormatter: formatFirstTooltip,
 	    highlightLineColor: '#CCC',
 	    highlightSpotColor: '#000',
 	    xvalues: bp.tim,
-	    tooltipFormatter: formatFirstTooltip,
 	    chartRangeMin: chartMinY,
 	    chartRangeMax: chartMaxY
 		});
@@ -167,12 +167,10 @@ function redrawChart() {
 		    minSpotColor: false,
 		    maxSpotColor: false,
 				spotColor: false,
-//				tooltipPrefix: 'EMA'+bp.EmaShortPar+': ',
-//				numberFormatter: formatChartNumbers,
+				tooltipFormatter: formatEMAShortTooltip,
 				highlightLineColor: '#CCC',
 				highlightSpotColor: '#000',
 				xvalues: bp.tim,
-				tooltipFormatter: formatEMAShortTooltip,
 		    chartRangeMin: chartMinY,
 		    chartRangeMax: chartMaxY				
 			});
@@ -187,12 +185,10 @@ function redrawChart() {
 		    minSpotColor: false,
 		    maxSpotColor: false,
 				spotColor: false,
-				tooltipPrefix: 'EMA'+bp.EmaLongPar+': ',
-				numberFormatter: formatChartNumbers,
+				tooltipFormatter: formatEMALongTooltip,
 				highlightLineColor: '#CCC',
 				highlightSpotColor: '#000',
 				xvalues: bp.tim,
-				tooltipFormatter: formatEMALongTooltip,
 		    chartRangeMin: chartMinY,
 		    chartRangeMax: chartMaxY				
 			});
@@ -207,7 +203,6 @@ function formatChartNumbers(v) {
 function formatFirstTooltip(sp, options, fields){
 	var d=new Date(fields.x*60*1000);
 	var dateStr=d.getFullYear()+"-"+padit(d.getMonth()+1)+"-"+padit(d.getDate());
-	//var date=d.getDate()+"/"+(d.getMonth()+1)+" ";
 	var t=(dateStr!=nowDateStr?dateStr:"Today")+" "+padit(d.getHours()) + ":"+padit(d.getMinutes());
   return '<div align="center">'+t+ '<table width="100%" border="0"><tr><td align="left" class="tooltipTableCell"><span style="color: '+fields.color+'">&#9679;</span> Price: '+formatChartNumbers(fields.y)+'<br>';
 }
@@ -221,12 +216,25 @@ function formatEMAShortTooltip(sp, options, fields){
 }
 
 function formatEMALongTooltip(sp, options, fields){
-	var trend='?';
-	if (lastEmaTime==fields.x)
-		trend=(fields.y<lastEmaShort?'<span style="font-weight:bold;color:#6F6">UP</span>':(fields.y>lastEmaShort?'<span style="font-weight:bold;color:#F66">DOWN</span>':'none'));
-  return '<span style="color: '+fields.color+'">&#9679;</span> EMA'+bp.EmaLongPar+': '+formatChartNumbers(fields.y)+'</td></tr></table>Trend: '+trend;
-}
+    var trend='?';
 
+    //
+    // Display EMA S/L %. Helpful for gauging on the graph when trades execute on new trend directions.
+    // Round to 3 decimal places.
+    //
+    var trendIndicator=((lastEmaShort-fields.y) / ((lastEmaShort+fields.y)/2)) * 100;
+
+    if (lastEmaTime==fields.x) {
+    	if (trendIndicator>0)
+    		trend='<img class="trendIndicatorImg" src="trend_'+(trendIndicator>bp.MinBuyThreshold?'strong':'weak')+'_up.gif">';
+    	else if (trendIndicator<0)
+    		trend='<img class="trendIndicatorImg" src="trend_'+(-trendIndicator>bp.MinSellThreshold?'strong':'weak')+'_down.gif">';
+    	else
+    		trend='none';
+    }
+
+    return '<span style="color: '+fields.color+'">&#9679;</span> EMA'+bp.EmaLongPar+': '+formatChartNumbers(fields.y)+'</td></tr></table>Trend: '+trend+' '+formatChartNumbers(trendIndicator)+'%';
+}
 
 function toggleChart() {
 	if (document.getElementById("chart").style.display=="none") {
