@@ -54,6 +54,10 @@ Click the link after Inspect views: "_generated_background_page.html" next to th
 Changelog
 =========
 
+0.2.1.4
+- Fixed fetching trades with no API key. The bot can now be used to monitor trend without an API Key (but it will not be able to trade of course)
+- Experimental implementation of MtGox API v2 (set "useAPIv2=true" in file "background.js" if you want to test. But be warned: It's not extensively tested, so use at your own risk!)
+
 0.2.1.3
 - Added cache-busting for calls fetching trades
 

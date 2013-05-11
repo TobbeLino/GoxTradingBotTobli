@@ -1,6 +1,8 @@
 const MaxSamplesToKeep = 144;
 const	MtGoxAPI2BaseURL = 'https://data.mtgox.com/api/2/';
 const useAPIv2=false;
+
+console.log("Using MtGox API v"+(useAPIv2?"2":"0"));
  
 var ApiKey = localStorage.ApiKey || '';
 var ApiSec = localStorage.ApiSec || '';
@@ -9,7 +11,7 @@ var tradingEnabled = (localStorage.tradingEnabled || 1);
 
 var tradingIntervalMinutes = parseInt(localStorage.tradingIntervalMinutes || 60);
 var tickCount = localStorage.tickCount || 1;
-var LogLines = parseInt(localStorage.LogLines || 12);
+var LogLines = parseInt(localStorage.LogLines || 72);
 var EmaShortPar = parseInt(localStorage.EmaShortPar || 10);
 var EmaLongPar = parseInt(localStorage.EmaLongPar || 21);
 var MinBuyThreshold = parseFloat(localStorage.MinBuyThreshold || 0.25);
@@ -52,6 +54,14 @@ function schedupdate(t) {
 }
 
 function update() {	
+	if (ApiKey=='') {
+		// No API key. No use trying to fetch info...
+		BTC = Number.NaN;
+		fiat = Number.NaN;
+		chrome.browserAction.setTitle({title: "Gox Trading Bot (Tobli)"});
+		return;
+	}
+	
 	var path;
 	if (useAPIv2)
 		path="BTC"+currency+"/money/info";
@@ -78,7 +88,7 @@ function update() {
 				} else {
 					BTC = parseFloat(rr.Wallets.BTC.Balance.value);
 					fiat = parseFloat(rr.Wallets[currency].Balance.value);
-					chrome.browserAction.setTitle({title: (rr.Wallets.BTC.Balance.value + " BTC + " + rr.Wallets[currency].Balance.value + " " + currency)});
+					chrome.browserAction.setTitle({title: (BTC.toFixed(3) + " BTC + " + fiat.toFixed(2) + " " + currency)});
 				}
 			} catch (e) {
 				console.log(e);
@@ -99,7 +109,6 @@ function hmac_512(message, secret) {
 function mtgoxpost(path, params, ef, df) {
 	var req = new XMLHttpRequest();
 	req.open("POST", (useAPIv2 ? MtGoxAPI2BaseURL : "https://mtgox.com/api/0/")+path, true);
-	
 	req.onerror = ef;
 	req.onload = df;
 	var data = "nonce="+((new Date()).getTime()*1000);
@@ -190,7 +199,7 @@ function refreshEMA(reset) {
 			if ((tickCount==1) ||
 					(tickCount==2 && (dif2>MinBuyThreshold)) ||
 					(tickCount==3 && (dif2>MinBuyThreshold) && (dif3>MinBuyThreshold))) {
-				if (tradingEnabled==1) {
+				if ((tradingEnabled==1)&&(ApiKey!='')) {
 					console.log("BUY! (EMA("+EmaShortPar+")/EMA("+EmaLongPar+")>"+MinBuyThreshold+"% for "+tickCount+" or more ticks)");
 					//mtgoxpost("buyBTC.php", ['Currency='+currency,'amount=1000'], one, onl);
 					if (useAPIv2)
@@ -213,7 +222,7 @@ function refreshEMA(reset) {
 					(tickCount==2 && (dif2<-MinSellThreshold)) ||
 					(tickCount==3 && (dif2<-MinSellThreshold) && (dif3<-MinSellThreshold))) {
 
-				if (tradingEnabled==1) {
+				if ((tradingEnabled==1)&&(ApiKey!='')) {
 					console.log("SELL! (EMA("+EmaShortPar+")/EMA("+EmaLongPar+")<-"+MinSellThreshold+"% for "+tickCount+" or more ticks)");
 					if (useAPIv2)
 						mtgoxpost("BTC"+currency+"/money/order/add", ['type=ask','amount_int='+Math.round(amount*100000000).toString()], one, onl);
@@ -243,7 +252,7 @@ function updateH1(reset) { // Added "reset" parameter to clear the H1 data - sho
 	if (updateinprogress) {
 		return;
 	}
-	if (isNaN(BTC) || isNaN(fiat)) {
+	if (ApiKey!='' && (isNaN(BTC) || isNaN(fiat))) {
 		console.log("User info not fetched yet! Fetch and call updateH1() again in 2 seconds...");
 		schedupdate(10);
 		setTimeout(updateH1, 2*1000); 

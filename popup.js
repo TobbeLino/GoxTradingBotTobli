@@ -90,7 +90,7 @@ function refreshtable() {
 		document.getElementById("nobalan").style.display="none";
 		document.getElementById("balance").style.display="table-row";
 		document.getElementById("usd").innerHTML=bp.fiat.toFixed(2)+" "+ bp.currency;
-		document.getElementById("btc").innerHTML=bp.BTC.toFixed(2);
+		document.getElementById("btc").innerHTML=bp.BTC.toFixed(3);
 	}
 	redrawChart();
 }

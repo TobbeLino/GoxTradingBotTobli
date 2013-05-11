@@ -26,7 +26,7 @@ function rese() {
 
 	//sla.selectedIndex=1
 	for (var i=0; i<sla.length; i++) {
-    if (sla[i].value == 24) {
+    if (sla[i].value == 72) {
     	sla.selectedIndex=i;
     	break;
     }
@@ -106,7 +106,7 @@ function save() {
 
 	localStorage.tradingEnabled=bp.tradingEnabled=(document.getElementById("tradingEnabled").checked?1:0);
 	
-	console.log("localStorage.tradingEnabled="+localStorage.tradingEnabled);
+//	console.log("localStorage.tradingEnabled="+localStorage.tradingEnabled);
 
 	localStorage.currency=bp.currency=currency;
 	localStorage.keepBTC=bp.keepBTC=keepBTC;
@@ -165,7 +165,7 @@ function setfields() {
 	document.getElementById("keepBTC").value=bp.keepBTC.toString();
 	
 	document.getElementById("tradingEnabled").checked=(bp.tradingEnabled==1);
-	console.log("bp.tradingEnabled="+bp.tradingEnabled);
+//	console.log("bp.tradingEnabled="+bp.tradingEnabled);
 	
 //	document.getElementById("keepFiat").value=bp.keepFiat.toString();
 	
