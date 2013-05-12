@@ -1,4 +1,4 @@
-const MaxSamplesToKeep = 144;
+const MaxSamplesToKeep = 20;
 const	MtGoxAPI2BaseURL = 'https://data.mtgox.com/api/2/';
 const useAPIv2=false;
 
@@ -16,6 +16,7 @@ var EmaShortPar = parseInt(localStorage.EmaShortPar || 10);
 var EmaLongPar = parseInt(localStorage.EmaLongPar || 21);
 var MinBuyThreshold = parseFloat(localStorage.MinBuyThreshold || 0.25);
 var MinSellThreshold = parseFloat(localStorage.MinSellThreshold || 0.25);
+var VolThreshold = parseFloat(localStorage.VolThreshold || 1);
 var currency = localStorage.currency || 'USD'; 							// Fiat currency to trade with
 var keepBTC = parseFloat(localStorage.keepBTC || 0.0); 			// this amount in BTC will be untouched by trade - bot will play with the rest
 //var keepFiat = parseFloat(localStorage.keepFiat || 0.0); 	// this amount in Fiat currency will be untouched by trade - bot will play with the rest
@@ -30,12 +31,14 @@ var H1 = []; // the H1 data
 var tim = [];
 var emaLong = [];
 var emaShort = [];
+var volIndex = [];
 
 var popupRefresh=null;
 var popupUpdateCounter=null;
 var updateinprogress=false;
 
 function padit(d) {return d<10 ? '0'+d.toString() : d.toString()}
+
 
 function updateEMA(ema, N) {
 	var pr, k = 2 / (N+1);
@@ -47,6 +50,19 @@ function updateEMA(ema, N) {
 		}
 	}
 }
+
+function updateVol(vol, N) {
+	while (vol.length < H1.length) {
+		if (vol.length==0) { 
+				vol.push(H1[0]);
+			} else {
+				var recentlow = Math.min.apply(Math, volIndex(vol.length-3,vol.length));
+				var recenthigh = Math.max.apply(Math, volIndex(vol.length-3,vol.length));
+				vol.push(recenthigh.toFixed(3)-recentlow.toFixed(3)).toFixed(2);
+			}
+	}
+}
+
 
 function schedupdate(t) {
 	if (utimer) clearTimeout();
@@ -161,6 +177,7 @@ function refreshEMA(reset) {
 		//console.log("refreshEMA(): reset EMA data (EMA/Thresholds/Interval has changed)");
 		emaLong = [];
 		emaShort = [];
+		volIndex = [];
 	}
 
 	if (H1.length == 0) {
@@ -171,11 +188,13 @@ function refreshEMA(reset) {
 		tim = tim.slice(skip);
 		emaLong = emaLong.slice(skip);
 		emaShort = emaShort.slice(skip);
+		volIndex = volIndex.slice(skip);
 	}
 
 	updateEMA(emaLong, EmaLongPar);
 	updateEMA(emaShort, EmaShortPar);
-
+	updateVol(volIndex, VolThreshold);
+	
 	var dif1 = getemadif(H1.length-1);
 	var dif2 = getemadif(H1.length-2);
 	var dif3 = getemadif(H1.length-3);
@@ -266,7 +285,8 @@ function updateH1(reset) { // Added "reset" parameter to clear the H1 data - sho
 		H1 = [];
 		tim = [];
 		emaLong = [];
-		emaShort = [];		
+		emaShort = [];	
+		volIndex = [];		
 		bootstrap = 1;
 		chrome.browserAction.setBadgeBackgroundColor({color:[128, 128, 128, 50]});
 	}
