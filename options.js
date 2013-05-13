@@ -18,6 +18,7 @@ function rese() {
 	document.getElementById("keepBTC").value=0.0;
 	
 	document.getElementById("tradingEnabled").checked = true;
+	document.getElementById("progCheck").checked = true;
 	
 //	document.getElementById("keepFiat").value=0.0;
 	
@@ -127,6 +128,7 @@ function save() {
 	bp.schedupdate(10);
 
 	localStorage.tradingEnabled=bp.tradingEnabled=(document.getElementById("tradingEnabled").checked?1:0);
+	localStorage.progCheck=bp.progCheck=(document.getElementById("progCheck").checked?1:0);
 	
 //	console.log("localStorage.tradingEnabled="+localStorage.tradingEnabled);
 
@@ -190,6 +192,7 @@ function setfields() {
 	document.getElementById("currency").value=bp.currency;
 	document.getElementById("keepBTC").value=bp.keepBTC.toString();
 	
+	document.getElementById("progCheck").checked=(bp.progCheck==1);
 	document.getElementById("tradingEnabled").checked=(bp.tradingEnabled==1);
 //	console.log("bp.tradingEnabled="+bp.tradingEnabled);
 	

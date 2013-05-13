@@ -167,6 +167,24 @@ function redrawChart() {
 	    chartRangeMin: chartMinY,
 	    chartRangeMax: chartMaxY
 		});
+		if (bp.volIndex.length>=bp.H1.length) {
+			$('#EMAChart').sparkline((bp.volIndex),{
+				lineColor: '#FF0000',
+				fillColor: false,
+				composite: true,
+				width: '95%',
+				lineWidth: 1,
+		    minSpotColor: false,
+		    maxSpotColor: false,
+				spotColor: false,
+				tooltipFormatter: formatVolTooltip,
+				highlightLineColor: '#CCC',
+				highlightSpotColor: '#000',
+				xvalues: bp.tim,
+		    chartRangeMin: 0.1,
+		    chartRangeMax: 5				
+			});
+		}
 		if (bp.emaShort.length>=bp.H1.length) {
 			$('#EMAChart').sparkline(bp.emaShort,{
 				lineColor: '#008800',			
@@ -203,24 +221,6 @@ function redrawChart() {
 		    chartRangeMax: chartMaxY				
 			});
 		}
-		if (bp.volIndex.length>=bp.H1.length) {
-			$('#EMAChart').sparkline((bp.volIndex*5),{
-				lineColor: '#FF0000',
-				fillColor: false,
-				composite: true,
-				width: '95%',
-				lineWidth: 1,
-		    minSpotColor: false,
-		    maxSpotColor: false,
-				spotColor: false,
-				tooltipFormatter: formatVolTooltip,
-				highlightLineColor: '#CCC',
-				highlightSpotColor: '#000',
-				xvalues: bp.tim,
-		    chartRangeMin: chartMinY,
-		    chartRangeMax: chartMaxY				
-			});
-		}
 	}
 }
 
@@ -237,6 +237,7 @@ function formatFirstTooltip(sp, options, fields){
 
 var lastEmaTime=0;
 var lastEmaShort=0;
+var lastVol=0;
 function formatEMAShortTooltip(sp, options, fields){
 	lastEmaTime=fields.x;
 	lastEmaShort=fields.y;	
@@ -264,6 +265,12 @@ function formatEMALongTooltip(sp, options, fields){
     return '<span style="color: '+fields.color+'">&#9679;</span> EMA'+bp.EmaLongPar+': '+formatChartNumbers(fields.y)+'</td></tr></table>Trend: '+trend+' '+formatChartNumbers(trendIndicator)+'%';
 }
 
+function formatVolTooltip(sp, options, fields){
+  return '<span style="color: '+fields.color+'">&#9679;</span> Voliticity: '+formatChartNumbers(fields.y)+'<br>';
+}
+
+
+
 function toggleChart() {
 	if (document.getElementById("chart").style.display=="none") {
 		document.getElementById("chart").style.display="block";
@@ -278,7 +285,6 @@ function toggleChart() {
 refreshtable();
 bp.popupRefresh=refreshtable;
 bp.popupUpdateCounter=popupUpdateCounter;
-
 document.addEventListener('DOMContentLoaded', function() {
 	chartLink.addEventListener('click', function(){toggleChart()});
 })

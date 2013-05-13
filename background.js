@@ -1,4 +1,4 @@
-const MaxSamplesToKeep = 20;
+const MaxSamplesToKeep = 144;
 const	MtGoxAPI2BaseURL = 'https://data.mtgox.com/api/2/';
 const useAPIv2=false;
 
@@ -9,6 +9,7 @@ var ApiSec = localStorage.ApiSec || '';
 
 var tradingEnabled = (localStorage.tradingEnabled || 1);
 
+var progCheck = (localStorage.progCheck || 1);
 var tradingIntervalMinutes = parseInt(localStorage.tradingIntervalMinutes || 60);
 var tickCount = localStorage.tickCount || 1;
 var LogLines = parseInt(localStorage.LogLines || 72);
@@ -16,7 +17,9 @@ var EmaShortPar = parseInt(localStorage.EmaShortPar || 10);
 var EmaLongPar = parseInt(localStorage.EmaLongPar || 21);
 var MinBuyThreshold = parseFloat(localStorage.MinBuyThreshold || 0.25);
 var MinSellThreshold = parseFloat(localStorage.MinSellThreshold || 0.25);
-var VolThreshold = parseFloat(localStorage.VolThreshold || 1);
+var VolSamples = parseInt(localStorage.VolSamples || 3);
+var VolBThreshold = parseFloat(localStorage.VolBThreshold || 1);
+var VolSThreshold = parseFloat(localStorage.VolSThreshold || 1);
 var currency = localStorage.currency || 'USD'; 							// Fiat currency to trade with
 var keepBTC = parseFloat(localStorage.keepBTC || 0.0); 			// this amount in BTC will be untouched by trade - bot will play with the rest
 //var keepFiat = parseFloat(localStorage.keepFiat || 0.0); 	// this amount in Fiat currency will be untouched by trade - bot will play with the rest
@@ -53,13 +56,14 @@ function updateEMA(ema, N) {
 
 function updateVol(vol, N) {
 	while (vol.length < H1.length) {
-		if (vol.length==0) { 
-				vol.push(H1[0]);
-			} else {
-				var recentlow = Math.min.apply(Math, volIndex(vol.length-3,vol.length));
-				var recenthigh = Math.max.apply(Math, volIndex(vol.length-3,vol.length));
-				vol.push(recenthigh.toFixed(3)-recentlow.toFixed(3)).toFixed(2);
-			}
+		if (vol.length<VolSamples) { 
+				vol.push(0);
+		} else {
+			var recentlow = Math.min.apply(Math, H1.slice((vol.length-VolSamples),vol.length+1));
+			var recenthigh = Math.max.apply(Math, H1.slice((vol.length-VolSamples),vol.length+1));
+			var recdif = (recenthigh.toFixed(3)-recentlow.toFixed(3));
+			vol.push(((recdif+vol[vol.length-2]))/2);
+		}
 	}
 }
 
@@ -193,11 +197,15 @@ function refreshEMA(reset) {
 
 	updateEMA(emaLong, EmaLongPar);
 	updateEMA(emaShort, EmaShortPar);
-	updateVol(volIndex, VolThreshold);
+	updateVol(volIndex, VolBThreshold);
 	
 	var dif1 = getemadif(H1.length-1);
 	var dif2 = getemadif(H1.length-2);
 	var dif3 = getemadif(H1.length-3);
+	
+		console.log(dif1);
+	console.log(dif2);
+	console.log(dif3);
 	
 	var last_minute_fetch=tim[tim.length-1];
 	var minute_now = parseInt((new Date()).getTime()/60000);
@@ -209,15 +217,15 @@ function refreshEMA(reset) {
 		chrome.browserAction.setBadgeText({text: Math.abs(dif1).toFixed(2)});
 	}
 
-	if (dif1>MinBuyThreshold) {
+	if (dif1>MinBuyThreshold && volIndex[H1.length-1]>VolBThreshold) {
 		chrome.browserAction.setBadgeBackgroundColor({color:[0, 128, 0, 200]});
 		if (fiat>=0.01) {
 		//if (fiat>=(Math.max(0.01,keepFiat))) {
 			//var s = fiat - keepFiat;
 			//if (getemadif(H1.length-2) > MinBuyThreshold) { //toli: not ready to change this yet...
 			if ((tickCount==1) ||
-					(tickCount==2 && (dif2>MinBuyThreshold)) ||
-					(tickCount==3 && (dif2>MinBuyThreshold) && (dif3>MinBuyThreshold))) {
+					(tickCount==2 && (dif2>MinBuyThreshold) && dif2.toFixed(3)<=dif1.toFixed(3)) ||
+					(tickCount==3 && (dif2>MinBuyThreshold) && (dif3>MinBuyThreshold) && dif2.toFixed(3)<=dif1.toFixed(3))) {
 				if ((tradingEnabled==1)&&(ApiKey!='')) {
 					console.log("BUY! (EMA("+EmaShortPar+")/EMA("+EmaLongPar+")>"+MinBuyThreshold+"% for "+tickCount+" or more ticks)");
 					//mtgoxpost("buyBTC.php", ['Currency='+currency,'amount=1000'], one, onl);
@@ -228,18 +236,20 @@ function refreshEMA(reset) {
 				} else {
 					console.log("Simulated BUY! (EMA("+EmaShortPar+")/EMA("+EmaLongPar+")>"+MinBuyThreshold+"% for "+tickCount+" or more ticks) - However, since trading is disabled, NO trade was actually made");
 				}
+				var sndbuy = new Audio("notify.wav");
+				sndbuy.play();
 			}
 		} else {
 			console.log("Trend is up, but no "+currency+" to spend...");
 		}
-	} else if (dif1<-MinSellThreshold) {
+	} else if (dif1<-MinSellThreshold && volIndex[H1.length-1]>VolSThreshold) {
 		chrome.browserAction.setBadgeBackgroundColor({color:[128, 0, 0, 200]});
 		if (BTC>keepBTC) {
 			var amount = BTC - keepBTC;
 			//if (getemadif(H1.length-2) < -MinSellThreshold) { //toli: not ready to change this yet...
 			if ((tickCount==1) ||
-					(tickCount==2 && (dif2<-MinSellThreshold)) ||
-					(tickCount==3 && (dif2<-MinSellThreshold) && (dif3<-MinSellThreshold))) {
+					(tickCount==2 && (dif2<-MinSellThreshold) && dif2.toFixed(3)>=dif1.toFixed(3)) ||
+					(tickCount==3 && (dif2<-MinSellThreshold) && (dif3<-MinSellThreshold) && dif2.toFixed(3)>=dif1.toFixed(3))) {
 
 				if ((tradingEnabled==1)&&(ApiKey!='')) {
 					console.log("SELL! (EMA("+EmaShortPar+")/EMA("+EmaLongPar+")<-"+MinSellThreshold+"% for "+tickCount+" or more ticks)");
@@ -247,13 +257,17 @@ function refreshEMA(reset) {
 						mtgoxpost("BTC"+currency+"/money/order/add", ['type=ask','amount_int='+Math.round(amount*100000000).toString()], one, onl);
 					else
 						mtgoxpost("sellBTC.php", ['Currency='+currency,'amount='+amount.toString()], one, onl);
+
 				} else {
 					console.log("Simulated SELL! (EMA("+EmaShortPar+")/EMA("+EmaLongPar+")<-"+MinSellThreshold+"% for "+tickCount+" or more ticks) - However, since trading is disabled, NO trade was actually made");
 				}
+					var sndsell = new Audio("notify.wav");
+					sndsell.play();
 			}
 		} else {
 			console.log("Trend is down, but no BTC to sell...");
 		}
+
 	} else {
 		if (dif1>0) {
 			chrome.browserAction.setBadgeBackgroundColor({color:[10, 100, 10, 100]});
@@ -398,6 +412,7 @@ function updateH1(reset) { // Added "reset" parameter to clear the H1 data - sho
 
 chrome.browserAction.setBadgeBackgroundColor({color:[128, 128, 128, 50]});
 schedupdate(10);
+
 //updateH1();
 setTimeout(function(){updateH1(false);}, 2*1000); // toli: Delay first updateH1() to allow user info to be fetched first... 
 //setInterval(updateH1, 3*60*1000) // recheck every 3 minutes
