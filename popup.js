@@ -1,5 +1,4 @@
 var bp = chrome.extension.getBackgroundPage();
-var chartVisible=false;
 var nowDate;
 var nowDateStr;
 
@@ -18,14 +17,26 @@ function refreshtable() {
 	else
 		document.getElementById("int").innerHTML=bp.tradingIntervalMinutes+" min";
 
-	if (bp.tickCount>1)
-		document.getElementById("ticks").innerHTML=bp.tickCount+" samples"
+	if (bp.tickCountBuy>1)
+		document.getElementById("ticksBuy").innerHTML=bp.tickCountBuy+" samples"
 	else
-		document.getElementById("ticks").innerHTML="1 sample";
+		document.getElementById("ticksBuy").innerHTML="1 sample";
+		
+	if (bp.tickCountSell>1)
+		document.getElementById("ticksSell").innerHTML=bp.tickCountSell+" samples"
+	else
+		document.getElementById("ticksSell").innerHTML="1 sample";
 		
 	document.getElementById("buyTres").innerHTML=bp.MinBuyThreshold;
 	document.getElementById("sellTres").innerHTML=bp.MinSellThreshold;
-	document.getElementById("tradingStatus").innerHTML=(bp.tradingEnabled==1?"<span style=\"color:#008000\"><b>Trading is enabled</b></span>":"<span style=\"color:#A00000\"><b>Trading is disabled</b></span>");
+	
+	if (bp.tradingEnabled==1) {
+		document.getElementById("tradingEnabledStatus").style.display="block";
+		document.getElementById("tradingDisabledStatus").style.display="none";
+	} else {
+		document.getElementById("tradingEnabledStatus").style.display="none";
+		document.getElementById("tradingDisabledStatus").style.display="block";
+	}
 		
 	while (tab.rows.length>4)
 		tab.deleteRow(4);
@@ -103,11 +114,10 @@ function popupUpdateCounter() {
 	redrawChart();
 }
 
-
-
 function redrawChart() {
-	if (chartVisible) {
-		
+	if (localStorage.chartVisible==1) {
+		document.getElementById("chart").style.display="block";
+
 		nowDate=new Date();
 		nowDateStr=nowDate.getFullYear()+"-"+padit(nowDate.getMonth()+1)+"-"+padit(nowDate.getDate());
 
@@ -193,6 +203,8 @@ function redrawChart() {
 		    chartRangeMax: chartMaxY				
 			});
 		}
+	} else {
+		document.getElementById("chart").style.display="none";
 	}
 }
 
@@ -237,12 +249,10 @@ function formatEMALongTooltip(sp, options, fields){
 }
 
 function toggleChart() {
-	if (document.getElementById("chart").style.display=="none") {
-		document.getElementById("chart").style.display="block";
-		chartVisible=true;
+	if ((localStorage.chartVisible===0)||(document.getElementById("chart").style.display=="none")) {
+		localStorage.chartVisible=1;
 	} else {
-		document.getElementById("chart").style.display="none";
-		chartVisible=false;
+		localStorage.chartVisible=0;
 	}
 	redrawChart();
 }
@@ -253,4 +263,12 @@ bp.popupUpdateCounter=popupUpdateCounter;
 
 document.addEventListener('DOMContentLoaded', function() {
 	chartLink.addEventListener('click', function(){toggleChart()});
+	enableTrading.addEventListener('click', function(){
+		localStorage.tradingEnabled=bp.tradingEnabled=1;
+		refreshtable();
+	});
+	disableTrading.addEventListener('click', function(){
+		localStorage.tradingEnabled=bp.tradingEnabled=0;
+		refreshtable();
+	});
 })

@@ -9,7 +9,7 @@ This project is modified/enhanced version of the original Gox Trading Bot (https
 
 Disclaimer
 ----------
-The authors of this project is NOT responible for any damage or loss caused by this software.
+The authors of this project is NOT responsible for any damage or loss caused by this software.
 There can be bugs, and the bot may not perform as expected or specified.
 The author has tested it and is using it himself, but there are NO warranties whatsoever!
 Please consider testing it first with a small amount of funds, and check to the code to see what how it's working.
@@ -19,9 +19,9 @@ Please consider testing it first with a small amount of funds, and check to the 
 Enhanced features of this modified bot
 --------------------------------------
 
- * Change sample intervals for the EMA calculations (5 min, 10 min, 15 min, 30 min, 1 hour, 2 hours, 3 hours)
+ * Change sample intervals for the EMA calculations (1 min, 5 min, 10 min, 15 min, 30 min, 45 min, 1 hour, 2 hours, 3 hours)
  
- * Decide when to trade after trend switch (1, 2 or 3 samples above thresholds)
+ * Decide when to trade after trend switch (1-5 samples above/below thresholds, separate settings for buy/sell)
  
  * Separate buy and sell thresholds
  
@@ -34,6 +34,10 @@ Enhanced features of this modified bot
  * Possibility to disable actual trading (the bot does everything, except the actual trading). Good for testing if e.g. a changed sample interval will cause a trend switch and would trigger an immediate trade.
  
  * Show chart with price and EMA-values
+
+ * Caching trade data to avoid hammering of MtGox and faster loading
+ 
+ * Option to always start the bot in "disabled" mode to avoid instant accidental trading with "bad" settings from last run.
 
 
 	
@@ -53,6 +57,15 @@ Click the link after Inspect views: "_generated_background_page.html" next to th
 
 Changelog
 =========
+
+0.2.1.5
+- Fixed bug corrupting data when user updated settings while fetching data
+- Cache trade data in local storage (a lot faster loading and less hammering of MtGox servers on restart)
+- Remember if chart is visible or not when closing popup
+- New setting "Disabled on start". Will make he bot always start disabled to avoid instant/accidental trading on startup
+- Lowered minimum sample interval to 1 minute for those who would like to experiment
+- Separate "Buy/Sell after X samples above/below thresholds"
+- Allow buy/sell after up to 5 samples (could be useful with very short sample intervals)
 
 0.2.1.4
 - Fixed fetching trades with no API key. The bot can now be used to monitor trend without an API Key (but it will not be able to trade of course)

@@ -90,6 +90,13 @@ td.err {
 	vertical-align:top;
 	margin:2px 3px 0px 3px;
 }
+.lnk {
+	color:#666;
+}
+.lnk span {
+	text-decoration:underline;
+	cursor:pointer;
+}
 </style>
 </head>
 <body>
@@ -108,15 +115,22 @@ td.err {
 		</tr>
 		<tr id="settings">
 			<td class="d" colspan="5">
-				<span id="tradingStatus"></span>
+				<span id="tradingEnabledStatus" style="display:none">
+					<span style="color:#008000"><b>Trading is enabled</b> <span class="lnk">(<span id="disableTrading" title="Disable trading">disable</span>)</span></span>
+				</span>
+				<span id="tradingDisabledStatus" style="display:none">
+					<span style="color:#A00000"><b>Trading is disabled</b> <span class="lnk">(<span id="enableTrading" title="Enable trading">enable</span>)</span></span>
+				</span>
 				<span style="position:relative;float:right">
 					<img src="chart.png" id="chartLink" alt="Chart" title="Chart" style="cursor:pointer;position:absolute;right:17px;margin:0 5px 0 0" border=0 width=15 height=12>
 					<a href="options.html" title="Options" target="bot_options" style="position:absolute;right:4px;">
 						<img src="options.png" alt="Options" title="Options" style="margin:-1px 0 0 0" border=0 width=13 height=13>
 					</a>
 				</span><br>
-				Sample interval: <span id="int"></span>&nbsp;&nbsp;&nbsp;&nbsp;Trade after: <span id="ticks"></span><br>
+				Sample interval: <span id="int"></span><!--&nbsp;&nbsp;&nbsp;&nbsp;Trade after: <span id="ticks"></span>--><br>
 				Buy threshold: <span id="buyTres"></span>%&nbsp;&nbsp;&nbsp;&nbsp;Sell threshold: -<span id="sellTres"></span>%<br>
+				Buy after: <span id="ticksBuy"></span>&nbsp;&nbsp;&nbsp;&nbsp;Sell after: <span id="ticksSell"></span><br>
+				
 				<span id="chart" style="width:100%;box-sizing:border-box;display:none;height:110px;background-color:#F0F0F0;border-top:1px solid gray;margin:6px 0 -4px 0;padding:4px 0">
 					<span id="EMAChart" style="max-width:310px;height:100px;box-sizing:border-box;margin:0">Loading..</span>
 					<div id="tooltipContiner" style="max-width:50px"></div>

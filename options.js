@@ -1,7 +1,8 @@
 var bp = chrome.extension.getBackgroundPage();
 var sla = document.getElementById("sla");
 var tradInt = document.getElementById("tradingIntervalMinutes");
-var tc = document.getElementById("tickCount");
+var tc_buy = document.getElementById("tickCountBuy");
+var tc_sell = document.getElementById("tickCountSell");
 
 function rese() {
 	document.getElementById("emas").value=10;
@@ -14,6 +15,7 @@ function rese() {
 	document.getElementById("keepBTC").value=0.0;
 	
 	document.getElementById("tradingEnabled").checked = true;
+	document.getElementById("tradingDisabledOnStart").checked = false;
 	
 //	document.getElementById("keepFiat").value=0.0;
 	
@@ -32,9 +34,15 @@ function rese() {
     }
   }
 
-	for (var i=0; i<tc.length; i++) {
-    if (tc[i].value == 1) {
-    	tc.selectedIndex=i;
+	for (var i=0; i<tc_buy.length; i++) {
+    if (tc_buy[i].value == 1) {
+    	tc_buy.selectedIndex=i;
+    	break;
+    }
+  }
+	for (var i=0; i<tc_sell.length; i++) {
+    if (tc_sell[i].value == 1) {
+    	tc_sell.selectedIndex=i;
     	break;
     }
   }
@@ -102,9 +110,10 @@ function save() {
 
 	localStorage.ApiKey=bp.ApiKey=document.getElementById("apikey").value;
 	localStorage.ApiSec=bp.ApiSec=document.getElementById("apisec").value;
-	bp.schedupdate(10);
+	bp.schedUpdateInfo(10);
 
 	localStorage.tradingEnabled=bp.tradingEnabled=(document.getElementById("tradingEnabled").checked?1:0);
+	localStorage.tradingDisabledOnStart=bp.tradingDisabledOnStart=(document.getElementById("tradingDisabledOnStart").checked?1:0);
 	
 //	console.log("localStorage.tradingEnabled="+localStorage.tradingEnabled);
 
@@ -123,7 +132,8 @@ function save() {
 	//localStorage.LogLines=bp.LogLines=parseInt(sla.value)
 	localStorage.LogLines=bp.LogLines=parseInt(sla.value*60/localStorage.tradingIntervalMinutes);
 
-	localStorage.tickCount=bp.tickCount=parseInt(tc.value);
+	localStorage.tickCountBuy=bp.tickCountBuy=parseInt(tc_buy.value);
+	localStorage.tickCountSell=bp.tickCountSell=parseInt(tc_sell.value);
 
 	localStorage.EmaShortPar=bp.EmaShortPar=es;
 	localStorage.EmaLongPar=bp.EmaLongPar=el;
@@ -137,19 +147,7 @@ function save() {
 	else
 		bp.refreshEMA(true);
 
-	if (bp.popupRefresh!=null) {
-			try {
-				bp.popupRefresh();
-			} catch (e) {
-				bp.popupRefresh=null;
-			}
-	} else if (bp.popupUpdateCounter!=null) {
-		try {
-			bp.popupUpdateCounter();
-		} catch (e) {
-			bp.popupUpdateCounter=null;
-		}				
-	}		
+	bp.refreshPopup(true);
 }
 
 function setfields() {
@@ -165,6 +163,8 @@ function setfields() {
 	document.getElementById("keepBTC").value=bp.keepBTC.toString();
 	
 	document.getElementById("tradingEnabled").checked=(bp.tradingEnabled==1);
+	document.getElementById("tradingDisabledOnStart").checked=(bp.tradingDisabledOnStart==1);
+	
 //	console.log("bp.tradingEnabled="+bp.tradingEnabled);
 	
 //	document.getElementById("keepFiat").value=bp.keepFiat.toString();
@@ -184,12 +184,19 @@ function setfields() {
 		}
 	}
 
-	for (var i=0; i<tc.length; i++) {
-    if (tc[i].value==bp.tickCount) {
-    	tc.selectedIndex=i;
+	for (var i=0; i<tc_buy.length; i++) {
+    if (tc_buy[i].value==bp.tickCountBuy) {
+    	tc_buy.selectedIndex=i;
     	break;
     }
   }
+	for (var i=0; i<tc_sell.length; i++) {
+    if (tc_sell[i].value==bp.tickCountSell) {
+    	tc_sell.selectedIndex=i;
+    	break;
+    }
+  }
+
   intervalChanged();
 }
 
@@ -197,7 +204,7 @@ function intervalChanged() {
 	var maxHours=parseInt(bp.MaxSamplesToKeep*parseInt(tradInt.value)/60);
 	parseInt(sla.value*60/localStorage.tradingIntervalMinutes);
 	var currentSlaValue=parseInt(sla.value);
-		
+	
 	for (var i=sla.options.length-1; i>=0; i--) {
 		if (parseInt(sla.options[i].value)>maxHours) {
 			sla.options[i].disabled=true;
@@ -212,7 +219,6 @@ function intervalChanged() {
 		}
 	}			
 }
-
 
 document.addEventListener('DOMContentLoaded', function() {
 	butres.addEventListener('click', function(){rese()});

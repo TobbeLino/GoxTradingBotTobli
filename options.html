@@ -5,7 +5,7 @@ body {
 table.top {
 	border: 2px solid black;
 	padding: 5px;
-	width:500px;
+	width:550px;
 	background-color:#F0F0C0;
 }
 .outer {
@@ -70,11 +70,18 @@ sup {
 							<input type="checkbox" value="true" id="tradingEnabled"> (uncheck to disable actual trading)
 						</td>
 					</tr>
+					<tr>
+						<td nowrap="nowrap" style="vertical-align:top;padding-top:5px;">Disabled on start</td>
+						<td>
+							<input type="checkbox" value="true" id="tradingDisabledOnStart"> (always start disabled to avoid instant/accidental trading)
+						</td>
+					</tr>
 					
 					<tr>
 						<td nowrap="nowrap" style="vertical-align:top;padding-top:5px;">Sample interval</td>
 						<td>
 							<select id="tradingIntervalMinutes" class="mono">
+								<option value="1">1 minute</option>
 								<option value="5">5 minutes</option>
 								<option value="10">10 minutes</option>
 								<option value="15">15 minutes</option>
@@ -87,22 +94,13 @@ sup {
 						</td>
 					</tr>
 
-					<tr>
-						<td nowrap="nowrap" style="vertical-align:top;padding-top:5px;">Trade after</td>
-						<td>
-							<select id="tickCount" class="mono">
-								<option value="1">1 sample</option>
-								<option value="2">2 samples</option>
-								<option value="3">3 samples</option>
-							</select> above/below thresholds
-						</td>
-					</tr>
 					
 					<tr>
 						<td nowrap="nowrap" style="vertical-align:top;padding-top:5px;">Show last</td>
 						<td>
 							<select id="sla" class="mono">
 								<option value="1">1 hour</option>
+								<option value="2">2 hours</option>
 								<option value="3">3 hours</option>
 								<option value="6">6 hours</option>
 								<option value="12">12 hours</option>
@@ -117,13 +115,13 @@ sup {
 
 
 					<tr>
-						<td nowrap="nowrap" style="vertical-align:top;padding-top:7px;">Trend indicator</td>
-						<td>EMA(<input type="text" size="2" maxlength="2" id="emas" class="mono r">) / EMA(<input type="text" size="2" maxlength="2" id="emal" class="mono r">)</td>
+						<td nowrap="nowrap" style="padding-top:25px;">Trend indicator</td>
+						<td style="padding-top:25px;">EMA(<input type="text" size="2" maxlength="2" id="emas" class="mono r">) / EMA(<input type="text" size="2" maxlength="2" id="emal" class="mono r">)</td>
 					</tr>
 
 					<tr>
-						<td colspan="2">
-							<table width="360" height="50">
+						<td colspan="2" style="padding-top:25px">
+							<table width="400" cellpadding=0 cellspacing=0>
 								<tr>
 									<td width="50%">Buy threshold: <input type="text" size="4" maxlength="4" id="buy_tras" class="mono r">%<sup> 2</sup></td>
 									<td>Sell threshold: -<input type="text" size="4" maxlength="4" id="sell_tras" class="mono r">%<sup> 2</sup></td>
@@ -131,10 +129,35 @@ sup {
 							</table>
 						</td>
 					</tr>
-					
 					<tr>
 						<td colspan="2">
-							<table width="360">
+							<table width="400" cellpadding=0 cellspacing=0>
+								<tr>
+									<td width="50%">Buy after 
+										<select id="tickCountBuy" class="mono">
+											<option value="1">1 sample</option>
+											<option value="2">2 samples</option>
+											<option value="3">3 samples</option>
+											<option value="4">4 samples</option>
+											<option value="5">5 samples</option>
+										</select>
+									</td>
+									<td width="50%">Sell after 
+										<select id="tickCountSell" class="mono">
+											<option value="1">1 sample</option>
+											<option value="2">2 samples</option>
+											<option value="3">3 samples</option>
+											<option value="4">4 samples</option>
+											<option value="5">5 samples</option>
+										</select>
+									</td>
+								</tr>
+							</table>
+						</td>
+					</tr>					
+					<tr>
+						<td colspan="2" style="padding-top:25px">
+							<table width="400" height="20" cellpadding=0 cellspacing=0>
 								<tr>
 									<td width="50%">Fiat currency: <input type="text" size="6" id="currency" class="mono"></td>
 									<td>Keep BTC: <input type="text" size="6" id="keepBTC" class="mono"></td>
@@ -164,7 +187,7 @@ sup {
 				<sup>1</sup>
 				Take <b>API Key</b> and <b>Secret</b> from your MtGox account. Use <b>Advanced API Key Creation</b> at <a href="https://mtgox.com/security" target="_blank">Security Center</a> page to create these values. Make sure to grant only <b>get_info</b> and <b>trade</b> access rights for this API key. The bot does not need you to be logged at the MtGox account - just setup the Key&Secret, leave the browser running and it will trade...<br><br>
 				<sup>2</sup>
-				The bot will buy bitcoins for the <u>whole amount of fiat money</u>, or sell <u>all bitcoins, minus the value of "Keep BTC"</u> at the given MtGox account when the difference between the two EMA values (expressed in %) stays above/below the <b>Buy/sell thresholds</b> for as many samples as selected in "Trade after X samples above/below threshold".</div>
+				The bot will buy bitcoins for the <u>whole amount of fiat money</u>, or sell <u>all bitcoins, minus the value of "Keep BTC"</u> at the given MtGox account when the difference between the two EMA values (expressed in %) stays above/below the <b>Buy/sell thresholds</b> for as many samples as selected in "Buy/Sell after X samples".</div>
 			<hr>
 			<div class="note stat">
 				If you like this extension send <b>0.01</b>&nbsp;BTC to <b>13g6zY7GJJvKEiYzTnGP8H9dEDEhYW2jFq</b>
