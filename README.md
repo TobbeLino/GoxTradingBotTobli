@@ -9,7 +9,7 @@ This project is modified/enhanced version of the original Gox Trading Bot (https
 
 Disclaimer
 ----------
-The authors of this project is NOT responible for any damage or loss caused by this software.
+The authors of this project is NOT responsible for any damage or loss caused by this software.
 There can be bugs, and the bot may not perform as expected or specified.
 The author has tested it and is using it himself, but there are NO warranties whatsoever!
 Please consider testing it first with a small amount of funds, and check to the code to see what how it's working.
@@ -19,7 +19,7 @@ Please consider testing it first with a small amount of funds, and check to the 
 Enhanced features of this modified bot
 --------------------------------------
 
- * Change sample intervals for the EMA calculations (5 min, 10 min, 15 min, 30 min, 1 hour, 2 hours, 3 hours)
+ * Change sample intervals for the EMA calculations (5 min, 10 min, 15 min, 30 min, 45 min, 1 hour, 2 hours, 3 hours)
  
  * Decide when to trade after trend switch (1, 2 or 3 samples above thresholds)
  
