@@ -9,11 +9,16 @@ function rese() {
 	//document.getElementById("tras").value=0.25;
 	document.getElementById("buy_tras").value=0.25;
 	document.getElementById("sell_tras").value=0.25;
+
+	document.getElementById("vol_btras").value=1;
+	document.getElementById("vol_stras").value=1;
+	document.getElementById("vol_samp").value=10;
 	
 	document.getElementById("currency").value="USD";
 	document.getElementById("keepBTC").value=0.0;
 	
 	document.getElementById("tradingEnabled").checked = true;
+	document.getElementById("progCheck").checked = true;
 	
 //	document.getElementById("keepFiat").value=0.0;
 	
@@ -54,6 +59,24 @@ function save() {
 		return;
 	}
 
+	var vol_btr = parseFloat(document.getElementById("vol_btras").value);
+	if (isNaN(vol_btr) || vol_btr<0) {
+		alert("Invalid \"volatility buy treshold\"");
+		return;
+	}
+	
+	var vol_str = parseFloat(document.getElementById("vol_stras").value);
+	if (isNaN(vol_str) || vol_str<0) {
+		alert("Invalid \"volatility sell treshold\"");
+		return;
+	}
+	
+	var vol_sa = parseInt(document.getElementById("vol_samp").value);
+	if (isNaN(vol_sa) || vol_sa<1 || vol_sa>100) {
+		alert("Invalid \"volatility samples\"");
+		return;
+	}
+	
 	var es = parseInt(document.getElementById("emas").value);
 	var el = parseInt(document.getElementById("emal").value);
 	if (isNaN(es) || isNaN(el)) {
@@ -96,7 +119,7 @@ function save() {
 //		return;
 //	}
 	
-	if (bp.EmaShortPar!=es || bp.EmaLongPar!=el || bp.MinBuyThreshold!=buy_tr || bp.MinSellThreshold!=sell_tr || bp.tradingIntervalMinutes != parseInt(tradInt.value) ) {
+	if (bp.EmaShortPar!=es || bp.EmaLongPar!=el || bp.MinBuyThreshold!=buy_tr || bp.MinSellThreshold!=sell_tr || bp.VolSamples!=vol_sa || bp.VolBThreshold!=vol_btr || bp.VolSThreshold!=vol_str || bp.tradingIntervalMinutes != parseInt(tradInt.value) ) {
 		if (!confirm("Applying different Trading interval/EMA/Threshold values may case an instant trigger to execute a trade."))  return;
 	}
 
@@ -105,6 +128,7 @@ function save() {
 	bp.schedupdate(10);
 
 	localStorage.tradingEnabled=bp.tradingEnabled=(document.getElementById("tradingEnabled").checked?1:0);
+	localStorage.progCheck=bp.progCheck=(document.getElementById("progCheck").checked?1:0);
 	
 //	console.log("localStorage.tradingEnabled="+localStorage.tradingEnabled);
 
@@ -130,7 +154,9 @@ function save() {
 	//localStorage.MinThreshold=bp.MinThreshold=tr;
 	localStorage.MinBuyThreshold=bp.MinBuyThreshold=buy_tr;
 	localStorage.MinSellThreshold=bp.MinSellThreshold=sell_tr;
-	
+	localStorage.VolSamples=bp.VolSamples=vol_sa;
+	localStorage.VolBThreshold=bp.VolBThreshold=vol_btr;
+	localStorage.VolSThreshold=bp.VolSThreshold=vol_str;	
 	//bp.refreshEMA(true);
 	if (tradIntChanged)
 		bp.updateH1(true); // call updateH1() with reset==true instead to also reset the H1-array if trading interval has changed (current data in H1 is no good)
@@ -160,10 +186,13 @@ function setfields() {
 	//document.getElementById("tras").value=bp.MinThreshold.toFixed(2);
 	document.getElementById("buy_tras").value=bp.MinBuyThreshold.toFixed(2);
 	document.getElementById("sell_tras").value=bp.MinSellThreshold.toFixed(2);
-	
+	document.getElementById("vol_btras").value=bp.VolBThreshold.toFixed(2);
+	document.getElementById("vol_stras").value=bp.VolSThreshold.toFixed(2);
+	document.getElementById("vol_samp").value=bp.VolSamples;	
 	document.getElementById("currency").value=bp.currency;
 	document.getElementById("keepBTC").value=bp.keepBTC.toString();
 	
+	document.getElementById("progCheck").checked=(bp.progCheck==1);
 	document.getElementById("tradingEnabled").checked=(bp.tradingEnabled==1);
 //	console.log("bp.tradingEnabled="+bp.tradingEnabled);
 	

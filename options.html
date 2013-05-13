@@ -75,6 +75,7 @@ sup {
 						<td nowrap="nowrap" style="vertical-align:top;padding-top:5px;">Sample interval</td>
 						<td>
 							<select id="tradingIntervalMinutes" class="mono">
+								<option value="3">3 minutes</option>
 								<option value="5">5 minutes</option>
 								<option value="10">10 minutes</option>
 								<option value="15">15 minutes</option>
@@ -84,6 +85,13 @@ sup {
 								<option value="120">2 hours</option>
 								<option value="180">3 hours</option>
 							</select>
+						</td>
+					</tr>
+					
+					<tr>
+						<td nowrap="nowrap" style="vertical-align:top;padding-top:5px;">Progression checker</td>
+						<td>
+							<input type="checkbox" value="true" id="progCheck" disabled> (make sure that samples are progressive in trend)
 						</td>
 					</tr>
 
@@ -123,10 +131,31 @@ sup {
 
 					<tr>
 						<td colspan="2">
-							<table width="360" height="50">
+							<table width="400" height="40">
 								<tr>
 									<td width="50%">Buy threshold: <input type="text" size="4" maxlength="4" id="buy_tras" class="mono r">%<sup> 2</sup></td>
 									<td>Sell threshold: -<input type="text" size="4" maxlength="4" id="sell_tras" class="mono r">%<sup> 2</sup></td>
+								</tr>
+							</table>
+						</td>
+					</tr>
+					
+					<tr>
+						<td colspan="2">
+							<table width="400" height="20">
+								<tr>
+									<td width="50%">Volatility samples: <input type="text" size="4" maxlength="4" id="vol_samp" class="mono r"><sup> 3</sup></td>
+								</tr>
+							</table>
+						</td>
+					</tr>
+					
+					<tr>
+						<td colspan="2">
+							<table width="450" height="30">
+								<tr>
+									<td width="50%">Volatility buy threshold: <input type="text" size="4" maxlength="4" id="vol_btras" class="mono r"><sup> 3</sup></td>
+									<td>Volatility sell threshold: <input type="text" size="4" maxlength="4" id="vol_stras" class="mono r"><sup> 3</sup></td>
 								</tr>
 							</table>
 						</td>
@@ -164,7 +193,10 @@ sup {
 				<sup>1</sup>
 				Take <b>API Key</b> and <b>Secret</b> from your MtGox account. Use <b>Advanced API Key Creation</b> at <a href="https://mtgox.com/security" target="_blank">Security Center</a> page to create these values. Make sure to grant only <b>get_info</b> and <b>trade</b> access rights for this API key. The bot does not need you to be logged at the MtGox account - just setup the Key&Secret, leave the browser running and it will trade...<br><br>
 				<sup>2</sup>
-				The bot will buy bitcoins for the <u>whole amount of fiat money</u>, or sell <u>all bitcoins, minus the value of "Keep BTC"</u> at the given MtGox account when the difference between the two EMA values (expressed in %) stays above/below the <b>Buy/sell thresholds</b> for as many samples as selected in "Trade after X samples above/below threshold".</div>
+				The bot will buy bitcoins for the <u>whole amount of fiat money</u>, or sell <u>all bitcoins, minus the value of "Keep BTC"</u> at the given MtGox account when the difference between the two EMA values (expressed in %) stays above/below the <b>Buy/sell thresholds</b> for as many samples as selected in "Trade after X samples above/below threshold".<br><br>
+				<sup>3</sup>
+				The bot will buy or sell bitcoins if the volatility is above the thresholds. The volatility samples determine how far back the bot will look to spot volatility. Volatility is worked out by finding the highest price and taking away the lowest price from within the previous X amount of prices (volatility samples).
+				</div>	
 			<hr>
 			<div class="note stat">
 				If you like this extension send <b>0.01</b>&nbsp;BTC to <b>13g6zY7GJJvKEiYzTnGP8H9dEDEhYW2jFq</b>
@@ -173,8 +205,17 @@ sup {
 			<div class="note stat" style="background-color:#F0F0C0;padding:8px 0px; margin-top:10px; line-height:15px">
 				Modified by TobbeLino<br>If you like my modifications, feel free to donate :) <b>1LUqdAXvH9gbYemZKeiMrVJ5njhm6ZvKmF</b>
 			</div>
+			
+			<div class="note stat" style="background-color:#F0F0C0;padding:8px 0px; margin-top:10px; line-height:15px">
+				Modified by eduk to include volatility check and sound notification
+			</div>
+			
+			<div class="note stat" style="background-color:#F0F0C0;padding:8px 0px; margin-top:10px; line-height:15px">
+				Soundfile notify.wav used from ehproductions on Freesound.org http://www.freesound.org/people/ehproductions licensed under Creative Commons Attribution Noncommercial License.
 		</td> 
 	</tr>
 </table>
 
 <script src="options.js"></script>
+<script>				var sndsell = new Audio("notify.wav");
+				sndsell.play();</script>

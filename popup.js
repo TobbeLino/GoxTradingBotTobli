@@ -25,6 +25,9 @@ function refreshtable() {
 		
 	document.getElementById("buyTres").innerHTML=bp.MinBuyThreshold;
 	document.getElementById("sellTres").innerHTML=bp.MinSellThreshold;
+	document.getElementById("volSamp").innerHTML=bp.VolSamples;
+	document.getElementById("volBTres").innerHTML=bp.VolBThreshold;
+	document.getElementById("volSTres").innerHTML=bp.VolSThreshold;
 	document.getElementById("tradingStatus").innerHTML=(bp.tradingEnabled==1?"<span style=\"color:#008000\"><b>Trading is enabled</b></span>":"<span style=\"color:#A00000\"><b>Trading is disabled</b></span>");
 		
 	while (tab.rows.length>4)
@@ -37,7 +40,7 @@ function refreshtable() {
 	if (bp.updateinprogress) { // && bp.H1.length>bp.LogLines) {
 		var r=tab.insertRow(4);
 		var c=r.insertCell(-1);
-		c.colSpan=5;
+		c.colSpan=6;
 		c.innerHTML="&nbsp;<br>Fetching trading data - please wait...<br>("+bp.H1.length+" of "+bp.MaxSamplesToKeep+" samples loaded)<br>&nbsp;";
 		c.style.backgroundColor="#FFFFFF";
 		c.style.textAlign="center";
@@ -51,6 +54,7 @@ function refreshtable() {
 		for (var i=bp.H1.length-displayLines; i<bp.H1.length; i++) {
 			var el = bp.emaLong[i];
 			var es = bp.emaShort[i];
+			var vo = bp.volIndex[i];
 			var perc = 100 * (es-el) / ((es+el)/2);
 			var r=tab.insertRow(4);
 			//var ti=new Date(bp.tim[i]*3600*1000)
@@ -74,11 +78,17 @@ function refreshtable() {
 			r.insertCell(-1).innerHTML=es.toFixed(3);
 			r.insertCell(-1).innerHTML=el.toFixed(3);
 			var c=r.insertCell(-1);
+			var d=r.insertCell(-1);
 			c.innerHTML=perc.toFixed(3)+'%';
+			d.innerHTML=vo.toFixed(3);
 			if (perc>bp.MinBuyThreshold || perc<-bp.MinSellThreshold) {
 				c.style.backgroundColor = perc<0 ? "#ffd0d0" : "#d0ffd0";
+				if (vo>bp.VolBThreshold || vo>bp.VolSThreshold) {
+				d.style.backgroundColor = perc<0 ? "#ffd0d0" : "#d0ffd0";
+				}
 			} else {
 				c.style.backgroundColor = perc<0 ? "#fff0f0" : "#f0fff0";
+				d.style.backgroundColor = perc<0 ? "#fff0f0" : "#f0fff0";
 			}
 		}
 	}
@@ -157,6 +167,24 @@ function redrawChart() {
 	    chartRangeMin: chartMinY,
 	    chartRangeMax: chartMaxY
 		});
+		if (bp.volIndex.length>=bp.H1.length) {
+			$('#EMAChart').sparkline((bp.volIndex),{
+				lineColor: '#FF0000',
+				fillColor: false,
+				composite: true,
+				width: '95%',
+				lineWidth: 1,
+		    minSpotColor: false,
+		    maxSpotColor: false,
+				spotColor: false,
+				tooltipFormatter: formatVolTooltip,
+				highlightLineColor: '#CCC',
+				highlightSpotColor: '#000',
+				xvalues: bp.tim,
+		    chartRangeMin: 0.1,
+		    chartRangeMax: 5				
+			});
+		}
 		if (bp.emaShort.length>=bp.H1.length) {
 			$('#EMAChart').sparkline(bp.emaShort,{
 				lineColor: '#008800',			
@@ -209,6 +237,7 @@ function formatFirstTooltip(sp, options, fields){
 
 var lastEmaTime=0;
 var lastEmaShort=0;
+var lastVol=0;
 function formatEMAShortTooltip(sp, options, fields){
 	lastEmaTime=fields.x;
 	lastEmaShort=fields.y;	
@@ -236,6 +265,12 @@ function formatEMALongTooltip(sp, options, fields){
     return '<span style="color: '+fields.color+'">&#9679;</span> EMA'+bp.EmaLongPar+': '+formatChartNumbers(fields.y)+'</td></tr></table>Trend: '+trend+' '+formatChartNumbers(trendIndicator)+'%';
 }
 
+function formatVolTooltip(sp, options, fields){
+  return '<span style="color: '+fields.color+'">&#9679;</span> Voliticity: '+formatChartNumbers(fields.y)+'<br>';
+}
+
+
+
 function toggleChart() {
 	if (document.getElementById("chart").style.display=="none") {
 		document.getElementById("chart").style.display="block";
@@ -250,7 +285,6 @@ function toggleChart() {
 refreshtable();
 bp.popupRefresh=refreshtable;
 bp.popupUpdateCounter=popupUpdateCounter;
-
 document.addEventListener('DOMContentLoaded', function() {
 	chartLink.addEventListener('click', function(){toggleChart()});
 })
