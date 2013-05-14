@@ -9,6 +9,11 @@ var ApiSec = localStorage.ApiSec || '';
 
 var tradingDisabledOnStart = (localStorage.tradingDisabledOnStart || 0);
 var tradingEnabled = (tradingDisabledOnStart? 0 : (localStorage.tradingEnabled || 0));
+if (tradingEnabled) {
+	chrome.browserAction.setIcon({path: 'robot_trading_on.png'});
+} else {
+	chrome.browserAction.setIcon({path: 'robot_trading_off.png'});
+}
 
 var tradingIntervalMinutes = parseInt(localStorage.tradingIntervalMinutes || 60);
 //var tickCount = localStorage.tickCount || 1;
@@ -191,9 +196,11 @@ function refreshEMA(reset) {
 
 	var last_minute_fetch=tim[tim.length-1];
 	var minute_now = parseInt((new Date()).getTime()/60000);
-	if (last_minute_fetch<minute_now-tradingIntervalMinutes) {
+	//if (last_minute_fetch<minute_now-tradingIntervalMinutes) {
+	if (updateinprogress) {
 		chrome.browserAction.setBadgeText({text: "?"});
-		console.log("Last data not yet fetched - do not trade!");
+		//console.log("Last data not yet fetched - do not trade!");
+		console.log("Update not finished - do not trade!");
 		return;
 	} else {
 		chrome.browserAction.setBadgeText({text: Math.abs(dif1).toFixed(2)});
@@ -269,7 +276,7 @@ var log = console.log = function() {
     } catch (e) {}
     var args = [];
     args.push(dat2day(t.getTime())+" "+padit(t.getHours())+":"+padit(t.getMinutes())+":"+padit(t.getSeconds()));
-    args.push([file + ":" + line]);
+    args.push("["+file + ":" + line+"]");
     // now add all the other arguments that were passed in:
     for (var _i = 0, _len = arguments.length; _i < _len; _i++) {
       arg = arguments[_i];
@@ -344,7 +351,6 @@ function getNextMinuteFetch() {
 }
 
 function emptySampleCache() {
-	// Only used when debugging...
 	log("emptySampleCache(): remove all cached samples");
 	for (var key in localStorage) {
 		if (key.indexOf("sample.")==0) {
@@ -369,7 +375,7 @@ function cleanSampleCache() {
 	}
 }
 
-function addSample(minuteFetch,price) {
+function addSample(minuteFetch,price,nocache) {
 	tim.push(minuteFetch);
 	var f = parseFloat(price);
 	var f0 = H1[H1.length-1];
@@ -377,7 +383,10 @@ function addSample(minuteFetch,price) {
 		f=f0;
 	}
 	H1.push(f);
-
+	
+	if (nocache)
+		return;
+		
 	var sample=localStorage.getItem("sample."+minuteFetch);
 	if ((!sample)||(sample=="null")) {
 		// The trade does not exist in local storage - add it...
@@ -515,7 +524,7 @@ function updateH1(reset) { // Added "reset" parameter to clear the H1 data - sho
 					}
 					cacheOtherUsefulSamples(trs);
 				} else {
-					//log("Empty sample chunk from MtGox - no trades since minute_fetch="+minute_fetch);
+					log("Empty sample chunk from MtGox - no trades since minute_fetch="+minute_fetch);
 					if (parseInt((new Date()).getTime()/(60*1000)) - minute_fetch < 5) {
 						// The trade we where trying to fetch is less than 5 minutes old
 						// => Probably no trades where made since then, so stop retrying...
@@ -527,7 +536,8 @@ function updateH1(reset) { // Added "reset" parameter to clear the H1 data - sho
 					}
 					// Empty chunk of old data => Probably MtGox error!
 					// Go on with next sample (otherwise we might get stuck here)
-					minute_fetch=getNextMinuteFetch();
+					//minute_fetch=getNextMinuteFetch();
+					minute_fetch+=tradingIntervalMinutes;
 				}
 				
 				// Check if next sample(s) exist in cache
@@ -560,8 +570,8 @@ function updateH1(reset) { // Added "reset" parameter to clear the H1 data - sho
 	} else {
 		// Done, and all samples where loaded from local storage...
 		log("Got new samples (all loaded from cache) "+H1.length+" "+MaxSamplesToKeep);
-		refreshEMA(reset);
 		updateinprogress = false;
+		refreshEMA(reset);
 		bootstrap = 0;
 		refreshPopup(true);
 	}

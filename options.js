@@ -3,6 +3,7 @@ var sla = document.getElementById("sla");
 var tradInt = document.getElementById("tradingIntervalMinutes");
 var tc_buy = document.getElementById("tickCountBuy");
 var tc_sell = document.getElementById("tickCountSell");
+var currencySelector = document.getElementById("currency");
 
 function rese() {
 	document.getElementById("emas").value=10;
@@ -43,6 +44,12 @@ function rese() {
 	for (var i=0; i<tc_sell.length; i++) {
     if (tc_sell[i].value == 1) {
     	tc_sell.selectedIndex=i;
+    	break;
+    }
+  }
+	for (var i=0; i<currencySelector.length; i++) {
+    if (currencySelector[i].value == "USD") {
+    	currencySelector.selectedIndex=i;
     	break;
     }
   }
@@ -92,7 +99,6 @@ function save() {
 		document.getElementById("emal").value=el;
 	}
 
-	var currency=document.getElementById("currency").value.toUpperCase();
 	var keepBTC=parseFloat(document.getElementById("keepBTC").value);
 //	var keepFiat=parseFloat(document.getElementById("keepFiat").value);
 	if (isNaN(keepBTC) || keepBTC<0) {
@@ -113,40 +119,55 @@ function save() {
 	bp.schedUpdateInfo(10);
 
 	localStorage.tradingEnabled=bp.tradingEnabled=(document.getElementById("tradingEnabled").checked?1:0);
+	if (bp.tradingEnabled) {
+		chrome.browserAction.setIcon({path: 'robot_trading_on.png'});
+	} else {
+		chrome.browserAction.setIcon({path: 'robot_trading_off.png'});
+	}
 	localStorage.tradingDisabledOnStart=bp.tradingDisabledOnStart=(document.getElementById("tradingDisabledOnStart").checked?1:0);
 	
 //	console.log("localStorage.tradingEnabled="+localStorage.tradingEnabled);
 
+	var resetH1=false;
+	
+	var currency=currencySelector.value;
+	if (currency!=bp.currency) {
+		bp.emptySampleCache();
+		resetH1=true;
+	}
 	localStorage.currency=bp.currency=currency;
 	localStorage.keepBTC=bp.keepBTC=keepBTC;
 //	localStorage.keepFiat=bp.keepFiat=keepFiat;
 
-	var tradIntChanged=false;
 	if (bp.tradingIntervalMinutes != parseInt(tradInt.value)) {
-		tradIntChanged=true;
+		resetH1=true;
 	}
 
-	localStorage.tradingIntervalMinutes=bp.tradingIntervalMinutes=parseInt(tradInt.value);
-	//localStorage.MaxMinutesBack=bp.MaxMinutesBack=parseInt(bp.MaxSamplesToKeep*bp.tradingIntervalMinutes);
-
-	//localStorage.LogLines=bp.LogLines=parseInt(sla.value)
-	localStorage.LogLines=bp.LogLines=parseInt(sla.value*60/localStorage.tradingIntervalMinutes);
-
-	localStorage.tickCountBuy=bp.tickCountBuy=parseInt(tc_buy.value);
-	localStorage.tickCountSell=bp.tickCountSell=parseInt(tc_sell.value);
-
-	localStorage.EmaShortPar=bp.EmaShortPar=es;
-	localStorage.EmaLongPar=bp.EmaLongPar=el;
-	//localStorage.MinThreshold=bp.MinThreshold=tr;
-	localStorage.MinBuyThreshold=bp.MinBuyThreshold=buy_tr;
-	localStorage.MinSellThreshold=bp.MinSellThreshold=sell_tr;
+	try {
+		localStorage.tradingIntervalMinutes=bp.tradingIntervalMinutes=parseInt(tradInt.value);
+		//localStorage.MaxMinutesBack=bp.MaxMinutesBack=parseInt(bp.MaxSamplesToKeep*bp.tradingIntervalMinutes);
 	
-	//bp.refreshEMA(true);
-	if (tradIntChanged)
-		bp.updateH1(true); // call updateH1() with reset==true instead to also reset the H1-array if trading interval has changed (current data in H1 is no good)
-	else
-		bp.refreshEMA(true);
-
+		//localStorage.LogLines=bp.LogLines=parseInt(sla.value)
+		localStorage.LogLines=bp.LogLines=parseInt(sla.value*60/localStorage.tradingIntervalMinutes);
+	
+		localStorage.tickCountBuy=bp.tickCountBuy=parseInt(tc_buy.value);
+		localStorage.tickCountSell=bp.tickCountSell=parseInt(tc_sell.value);
+	
+		localStorage.EmaShortPar=bp.EmaShortPar=es;
+		localStorage.EmaLongPar=bp.EmaLongPar=el;
+		//localStorage.MinThreshold=bp.MinThreshold=tr;
+		localStorage.MinBuyThreshold=bp.MinBuyThreshold=buy_tr;
+		localStorage.MinSellThreshold=bp.MinSellThreshold=sell_tr;
+		
+		//bp.refreshEMA(true);
+		if (resetH1) {
+			bp.updateH1(true); // call updateH1() with reset==true instead to also reset the H1-array if trading interval or currency has changed (current data in H1 is no good)
+		} else {
+			bp.refreshEMA(true);
+		}
+	} catch(e) {
+		bp.log("Exception in save(): "+e.stack);
+	}
 	bp.refreshPopup(true);
 }
 
@@ -193,6 +214,13 @@ function setfields() {
 	for (var i=0; i<tc_sell.length; i++) {
     if (tc_sell[i].value==bp.tickCountSell) {
     	tc_sell.selectedIndex=i;
+    	break;
+    }
+  }
+  
+	for (var i=0; i<currencySelector.length; i++) {
+    if (currencySelector[i].value==bp.currencySelector) {
+    	currencySelector.selectedIndex=i;
     	break;
     }
   }

@@ -60,6 +60,12 @@ Click the link after Inspect views: "_generated_background_page.html" next to th
 Changelog
 =========
 
+0.2.1.7
+- Fixed problem with garbage in cache after switching currency (the cache will now be flushed when changing currency)
+- Fixed problem fetching trade data with very short intervals and currecies with very low trading volumes (it's still a problem to get accurate EMA-values, but it's not quite possible when hardly any trades are being made!)
+- Selecting currency in settings is now made from a drop-down list
+- New icon: green eyes = trading is enabled :)
+
 0.2.1.6
 - Switched to MtGox API v2 by default (seems more stable when MtGox is DDoS:ed or having oher problems)
 - Fixed positon icons for chart and settings in popup

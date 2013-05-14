@@ -4,15 +4,15 @@
 		"scripts": ["sha512.js", "background.js"]
 	},
 	"browser_action": {
-		"default_icon": "icon.gif",
+		"default_icon": "robot_trading_off.png",
 		"default_popup": "popup.html"
 	},
 	"description": "MtGox EMA trading bot",
 	"icons": {
-		"128": "icon_128.gif"
+		"128": "robot_128.png"
 	},
 	"name": "Gox Trading Bot (Tobli)",
 	"options_page": "options.html",
 	"permissions": [ "https://mtgox.com/", "https://data.mtgox.com/" ],
-	"version": "0.2.1.6"
+	"version": "0.2.1.7"
 }
