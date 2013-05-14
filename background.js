@@ -27,6 +27,9 @@ var keepBTC = parseFloat(localStorage.keepBTC || 0.0); 			// this amount in BTC 
 var BTC = Number.NaN;
 var fiat = Number.NaN;
 
+var soundEnabled = (localStorage.soundEnabled || 0);
+if (soundEnabled==1) { var snd = new Audio("notify.wav");}
+
 var utimer=null;
 var bootstrap = 1; // progress bar for loading initial H1 data from mtgox
 
@@ -215,6 +218,9 @@ function refreshEMA(reset) {
 					//mtgoxpost("buyBTC.php", ['Currency='+currency,'amount=1000'], one, onl);
 					if (useAPIv2)
 						mtgoxpost("BTC"+currency+"/money/order/add", ['type=bid','amount_int='+(1000*100000000).toString()], one, onl);
+						if (soundEnabled==1) {
+							snd.play();
+						}
 					else
 						mtgoxpost("buyBTC.php", ['Currency='+currency,'amount=1000'], one, onl);
 				} else {
@@ -239,6 +245,9 @@ function refreshEMA(reset) {
 					console.log("SELL! (EMA("+EmaShortPar+")/EMA("+EmaLongPar+")<-"+MinSellThreshold+"% for "+tickCountSell+" or more ticks)");
 					if (useAPIv2)
 						mtgoxpost("BTC"+currency+"/money/order/add", ['type=ask','amount_int='+Math.round(amount*100000000).toString()], one, onl);
+						if (soundEnabled==1) {
+							snd.play();
+						}
 					else
 						mtgoxpost("sellBTC.php", ['Currency='+currency,'amount='+amount.toString()], one, onl);
 				} else {

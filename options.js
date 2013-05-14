@@ -14,6 +14,8 @@ function rese() {
 	document.getElementById("currency").value="USD";
 	document.getElementById("keepBTC").value=0.0;
 	
+	document.getElementById("soundEnabled").checked = false;
+	
 	document.getElementById("tradingEnabled").checked = true;
 	document.getElementById("tradingDisabledOnStart").checked = false;
 	
@@ -121,6 +123,8 @@ function save() {
 	localStorage.keepBTC=bp.keepBTC=keepBTC;
 //	localStorage.keepFiat=bp.keepFiat=keepFiat;
 
+	localStorage.soundEnabled=bp.soundEnabled=(document.getElementById("soundEnabled").checked?1:0);
+
 	var tradIntChanged=false;
 	if (bp.tradingIntervalMinutes != parseInt(tradInt.value)) {
 		tradIntChanged=true;
@@ -161,6 +165,7 @@ function setfields() {
 	
 	document.getElementById("currency").value=bp.currency;
 	document.getElementById("keepBTC").value=bp.keepBTC.toString();
+	document.getElementById("soundEnabled").checked=(bp.soundEnabled==1);
 	
 	document.getElementById("tradingEnabled").checked=(bp.tradingEnabled==1);
 	document.getElementById("tradingDisabledOnStart").checked=(bp.tradingDisabledOnStart==1);
