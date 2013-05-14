@@ -38,6 +38,8 @@ Enhanced features of this modified bot
  * Caching trade data to avoid hammering of MtGox and faster loading
  
  * Option to always start the bot in "disabled" mode to avoid instant accidental trading with "bad" settings from last run.
+ 
+ * Using MtGox API v2 for more reliable access
 
 
 	
