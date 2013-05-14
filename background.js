@@ -1,7 +1,8 @@
 const MaxSamplesToKeep = 144;
 const MaxTradingIntervalMinutes = 180;
 const	MtGoxAPI2BaseURL = 'https://data.mtgox.com/api/2/';
-const useAPIv2=false;
+const useAPIv2=true;
+const validSampleIntervalMinutes=[1,5,10,15,30,45,60,120,180];
 
 var ApiKey = localStorage.ApiKey || '';
 var ApiSec = localStorage.ApiSec || '';
@@ -256,9 +257,81 @@ function refreshEMA(reset) {
 	}
 }
 
-function log(s) {
-	var t=new Date();
-	console.log(dat2day(t.getTime())+" "+padit(t.getHours())+":"+padit(t.getMinutes())+":"+padit(t.getSeconds())+": "+s);
+var origLog = console.log;
+var log = console.log = function() {
+		var t=new Date();
+		var file="";
+		var line="";
+		try {
+			var stack = new Error().stack;
+    	file = stack.split("\n")[2].split("/")[3].split(":")[0];
+    	line = stack.split("\n")[2].split("/")[3].split(":")[1];
+    } catch (e) {}
+    var args = [];
+    args.push(dat2day(t.getTime())+" "+padit(t.getHours())+":"+padit(t.getMinutes())+":"+padit(t.getSeconds()));
+    args.push([file + ":" + line]);
+    // now add all the other arguments that were passed in:
+    for (var _i = 0, _len = arguments.length; _i < _len; _i++) {
+      arg = arguments[_i];
+      args.push(arg);
+    }
+    // pass it all into the "real" log function
+    origLog.apply(window.console, args); 
+}
+
+Object.size = function(obj) {
+	var size=0,key;
+	for (key in obj)
+		if (obj.hasOwnProperty(key))
+			size++;
+	return size;
+}
+
+function tidBinarySearch(trs,tid) {
+	if ((trs.length<=1) || (tid<trs[1].tid) || (tid>trs[trs.length-1].tid))
+		return -1;
+	var l=1,u=trs.length,m;
+	while (l<=u) { 
+		if (tid > parseInt(trs[(m=Math.floor((l+u)/2))].tid))
+			l=m+1;
+		else
+			u=(tid==parseInt(trs[m].tid)) ? -2 : m-1;
+	}
+	return (u==-2) ? m : l;
+}
+
+function cacheOtherUsefulSamples(trs) {
+	//log("generating usefulSamplePoints");
+	// May not really be needed to generate this on every call, but to get the very latest sample points for long date durations, do it anyway (not very intensive)...
+	var time_now=(new Date()).getTime();
+	var usefulSamplePoints={};
+	for (var j=0;j<validSampleIntervalMinutes.length;j++) {
+		var minute_now = parseInt(time_now/(validSampleIntervalMinutes[j]*60*1000)) * validSampleIntervalMinutes[j]; // Fix trading samples to whole hours...
+		var interval_minute_fetch = minute_now - (MaxSamplesToKeep*validSampleIntervalMinutes[j]);
+		while(interval_minute_fetch<minute_now) {
+			usefulSamplePoints[interval_minute_fetch.toString()]=1;
+			interval_minute_fetch += validSampleIntervalMinutes[j];
+		}
+	}
+	//log("Useful sample points generated (size="+Object.size(usefulSamplePoints)+")");
+
+//	var found=0;
+	try {
+		for (var key in usefulSamplePoints) {
+			var sample=localStorage.getItem("sample."+key);
+			if ((!sample)||(sample=="null")) {
+				var i=tidBinarySearch(trs,parseInt(key)*60*1000000);
+				if (i!=-1) {
+//					found++;
+//					log("Sample should be cached. key="+key+" tid="+parseInt(trs[i].tid/60/1000000)+" lastTid="+parseInt(trs[i-1].tid/60/1000000)+" price="+trs[i].price);
+					localStorage.setItem("sample."+key,trs[i].price);
+				}
+			}
+		}
+	} catch (e) {
+		log("Exception in cacheOtherUsefulSamples(): "+e.stack);
+	}
+//	log("cacheOtherUsefulSamples() - done - found="+found);
 }
 
 function getNextMinuteFetch() {
@@ -270,6 +343,17 @@ function getNextMinuteFetch() {
 	}
 }
 
+function emptySampleCache() {
+	// Only used when debugging...
+	log("emptySampleCache(): remove all cached samples");
+	for (var key in localStorage) {
+		if (key.indexOf("sample.")==0) {
+			localStorage.removeItem(key);
+		}
+	}	
+}
+//emptySampleCache(); // Only used when debugging...
+
 function cleanSampleCache() {
 	// Clean old, cached items from local storage
 	//log("cleanSampleCache()");
@@ -278,7 +362,7 @@ function cleanSampleCache() {
 		if (key.indexOf("sample.")==0) {
 			var tid=parseInt(key.substring(7));
 			if (tid<minute_first) {
-				log("cleanSampleCache(): removing old cached item (key="+key+")");
+				//log("cleanSampleCache(): removing old cached item (key="+key+")");
 				localStorage.removeItem(key);
 			}
 		}
@@ -326,6 +410,21 @@ function refreshPopup(fullRefresh) {
 	}
 }
 
+function getSamplesFromCache(minute_fetch, minute_now) {
+	var sample=localStorage.getItem("sample."+minute_fetch);
+	while ((sample)&&(sample!="null")&&(minute_fetch <= minute_now)) {
+		// As long as trades exist in in local storage: Just add them...
+		//log("Adding sample from local storage: sample."+minute_fetch+" = "+localStorage.getItem("sample."+minute_fetch));
+		addSample(minute_fetch,localStorage.getItem("sample."+minute_fetch));
+		if (bootstrap) {
+			chrome.browserAction.setBadgeText({text: ("       |        ").substr((bootstrap++)%9, 6)});
+		}
+		minute_fetch=getNextMinuteFetch();
+		sample=localStorage.getItem("sample."+minute_fetch);
+	}
+	return minute_fetch;
+}
+
 function updateH1(reset) { // Added "reset" parameter to clear the H1 data - should be called after changing settings that affects tradingInterval...
 	if (updateinprogress) {
 		if (reset) {
@@ -334,6 +433,7 @@ function updateH1(reset) { // Added "reset" parameter to clear the H1 data - sho
 		}
 		return;
 	}
+
 //	if (ApiKey!='' && (isNaN(BTC) || isNaN(fiat))) {
 //		log("updateH1(): User info not fetched yet! Retry in 5 seconds...");
 		//schedUpdateInfo(10);
@@ -355,23 +455,13 @@ function updateH1(reset) { // Added "reset" parameter to clear the H1 data - sho
 
 	var minute_now = parseInt((new Date()).getTime() / (tradingIntervalMinutes*60*1000)) * tradingIntervalMinutes; // Fix trading samples to whole hours...
 	var minute_fetch=getNextMinuteFetch();
-	var sample=localStorage.getItem("sample."+minute_fetch);
 	if (minute_fetch > minute_now) {
 		//log("Not yet time to fetch new samples...");
 		updateinprogress = false;
 		return;
 	}
 	
-	while ((sample)&&(sample!="null")&&(minute_fetch <= minute_now)) {
-		// As long as trades exist in in local storage: Just add them...
-		//log("Adding sample from local storage: sample."+minute_fetch+" = "+localStorage.getItem("sample."+minute_fetch));
-		addSample(minute_fetch,localStorage.getItem("sample."+minute_fetch));
-		if (bootstrap) {
-			chrome.browserAction.setBadgeText({text: ("       |        ").substr((bootstrap++)%9, 6)});
-		}
-		minute_fetch=getNextMinuteFetch();
-		sample=localStorage.getItem("sample."+minute_fetch);
-	}
+	minute_fetch=getSamplesFromCache(minute_fetch, minute_now);
 	if (minute_fetch <= minute_now) {
 		// We are not done, and a sample did not exist in local storage: We need to start fetching from MtGox...
 		
@@ -411,31 +501,37 @@ function updateH1(reset) { // Added "reset" parameter to clear the H1 data - sho
 				if (trs.length > 0) {
 					//log("Adding sample from MtGox: sample."+minute_fetch+" = "+trs[0].price);
 					addSample(minute_fetch,trs[0].price);
+					
+					// Check if the chunk contains more any useful data
+					minute_fetch=getNextMinuteFetch();
+					var i=1;
+					while ((i<trs.length)&&(minute_fetch <= minute_now)) {
+						if (parseInt(trs[i].tid) > minute_fetch*60*1000000) {
+							//log("Adding bonus sample from MtGox :) sample."+minute_fetch+" = "+trs[i].price);
+							addSample(minute_fetch,trs[i].price);
+							minute_fetch=getNextMinuteFetch();
+						}
+						i++;
+					}
+					cacheOtherUsefulSamples(trs);
 				} else {
 					//log("Empty sample chunk from MtGox - no trades since minute_fetch="+minute_fetch);
 					if (parseInt((new Date()).getTime()/(60*1000)) - minute_fetch < 5) {
 						// The trade we where trying to fetch is less than 5 minutes old
 						// => Probably no trades where made since then, so stop retrying...
-						// This will happen a lot with short sample interval on a calm market, so abort update to prevent hammering of MtGox
+						// This will happen a lot with short sample interval on a calm market, so abort the update to prevent hammering of MtGox
 						//log("Aborting update (probably no trades have been made since minute_fetch)");
 						updateinprogress=false;
 						refreshPopup(true);
 						return;
 					}
-				}
-
-				minute_fetch=getNextMinuteFetch();
-				sample=localStorage.getItem("sample."+minute_fetch);
-				while ((sample)&&(sample!="null")&&(minute_fetch <= minute_now)) {
-					// As long as trades exist in in local storage: Just add them...
-					//log("Adding sample from local storage (2): sample."+minute_fetch+" = "+localStorage.getItem("sample."+minute_fetch));
-					addSample(minute_fetch,localStorage.getItem("sample."+minute_fetch));
-					if (bootstrap) {
-						chrome.browserAction.setBadgeText({text: ("       |        ").substr((bootstrap++)%9, 6)});
-					}
+					// Empty chunk of old data => Probably MtGox error!
+					// Go on with next sample (otherwise we might get stuck here)
 					minute_fetch=getNextMinuteFetch();
-					sample=localStorage.getItem("sample."+minute_fetch);
 				}
+				
+				// Check if next sample(s) exist in cache
+				minute_fetch=getSamplesFromCache(minute_fetch, minute_now);
 				if (minute_fetch <= minute_now) {
 					// We are not done, but a sample did not exist in local storage: We need to fetch more samples from MtGox...
 					getSampleFromMtGox(req,minute_fetch);
@@ -471,7 +567,7 @@ function updateH1(reset) { // Added "reset" parameter to clear the H1 data - sho
 	}
 }
 
-log("Using MtGox API v"+(useAPIv2?"2":"0"));
+console.log("Using MtGox API v"+(useAPIv2?"2":"0"));
 chrome.browserAction.setBadgeBackgroundColor({color:[128, 128, 128, 50]});
 schedUpdateInfo(10);
 setTimeout(function(){updateH1(false);}, 2*1000); 	// Delay first updateH1() to allow user info to be fetched first...

@@ -58,6 +58,11 @@ Click the link after Inspect views: "_generated_background_page.html" next to th
 Changelog
 =========
 
+0.2.1.6
+- Switched to MtGox API v2 by default (seems more stable when MtGox is DDoS:ed or having oher problems)
+- Fixed positon icons for chart and settings in popup
+- Improved speed/effectiveness when fetching data from MtGox (use or cache all usable data in every chunk)
+
 0.2.1.5
 - Fixed bug corrupting data when user updated settings while fetching data
 - Cache trade data in local storage (a lot faster loading and less hammering of MtGox servers on restart)
