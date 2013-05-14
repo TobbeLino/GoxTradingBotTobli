@@ -253,9 +253,6 @@ function refreshEMA(reset) {
 				} else {
 					console.log("Simulated SELL! (EMA("+EmaShortPar+")/EMA("+EmaLongPar+")<-"+MinSellThreshold+"% for "+tickCountSell+" or more ticks) - However, since trading is disabled, NO trade was actually made");
 				}
-				if (soundEnabled==1) {
-						snd.play();
-				}
 			}
 		} else {
 			console.log("Trend is down, but no BTC to sell...");
