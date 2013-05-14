@@ -60,6 +60,9 @@ Click the link after Inspect views: "_generated_background_page.html" next to th
 Changelog
 =========
 
+0.2.1.8
+- Fixed stupid bug, not fetching last sample properly ("Update not finished - do not trade!" in the console log)
+
 0.2.1.7
 - Fixed problem with garbage in cache after switching currency (the cache will now be flushed when changing currency)
 - Fixed problem fetching trade data with very short intervals and currecies with very low trading volumes (it's still a problem to get accurate EMA-values, but it's not quite possible when hardly any trades are being made!)

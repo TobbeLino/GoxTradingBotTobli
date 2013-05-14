@@ -559,10 +559,10 @@ function updateH1(reset) { // Added "reset" parameter to clear the H1 data - sho
 				chrome.browserAction.setBadgeText({text: "xxx"});
 			}
 
-			if (refr)
-				refreshEMA(reset);
 			if (done)
 				updateinprogress = false;
+			if (refr)
+				refreshEMA(reset);
 
 			refreshPopup(refr);
 		}
