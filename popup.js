@@ -1,6 +1,7 @@
 var bp = chrome.extension.getBackgroundPage();
 var nowDate;
 var nowDateStr;
+var visibleChartSamples=bp.LogLines;
 
 function padit(d) {return d<10 ? '0'+d.toString() : d.toString()};
 function refreshtable() {
@@ -44,8 +45,8 @@ function refreshtable() {
 	nowDate=new Date();
 	nowDateStr=nowDate.getFullYear()+"-"+padit(nowDate.getMonth()+1)+"-"+padit(nowDate.getDate());
 
-	var displayLines=Math.min(bp.H1.length,bp.LogLines);
-	if (bp.updateinprogress) { // && bp.H1.length>bp.LogLines) {
+	var displayLines=Math.min(bp.H1.length,(bp.LogLines==0?bp.MaxSamplesToKeep-bp.preSamples:bp.LogLines));
+	if ((bp.updateInProgress)&&(bp.H1.length<bp.MaxSamplesToKeep)) { // && bp.H1.length>bp.LogLines) {
 		var r=tab.insertRow(4);
 		var c=r.insertCell(-1);
 		c.colSpan=5;
@@ -103,6 +104,23 @@ function refreshtable() {
 		document.getElementById("usd").innerHTML=bp.fiat.toFixed(2)+" "+ bp.currency;
 		document.getElementById("btc").innerHTML=bp.BTC.toFixed(3);
 	}
+	
+	var bitcoinchartsUrl;
+	if (bp.tradingIntervalMinutes<10)
+		bitcoinchartsUrl="http://www.bitcoincharts.com/charts/mtgoxUSD#rg1zig5-minztgSzbgBza1gEMAzm1g10za2gEMAzm2g21zi1gMACDzv";  // 1 day, 5-min, Candlestick , Bollinger Band, EMA(10), EMA(21), MACD
+	else if (bp.tradingIntervalMinutes<30)
+		bitcoinchartsUrl="http://www.bitcoincharts.com/charts/mtgoxUSD#rg1zig15-minztgSzbgBza1gEMAzm1g10za2gEMAzm2g21zi1gMACDzv"; // 1 day, 15-min
+	else if (bp.tradingIntervalMinutes<60)
+		bitcoinchartsUrl="http://www.bitcoincharts.com/charts/mtgoxUSD#rg2zig30-minztgSzbgBza1gEMAzm1g10za2gEMAzm2g21zi1gMACDzv"; // 2 days, 30-min
+	else if (bp.tradingIntervalMinutes<120)
+		bitcoinchartsUrl="http://www.bitcoincharts.com/charts/mtgoxUSD#rg5zigHourlyztgSzbgBza1gEMAzm1g10za2gEMAzm2g21zi1gMACDzv"; // 5 days, hourly
+	else if (bp.tradingIntervalMinutes<=180)
+		bitcoinchartsUrl="http://www.bitcoincharts.com/charts/mtgoxUSD#rg10zig2-hourztgSzbgBza1gEMAzm1g10za2gEMAzm2g21zi1gMACDzv"; // 10 days, 2-hours
+	else
+		bitcoinchartsUrl="http://www.bitcoincharts.com/charts/mtgoxUSD#rg30zig6-hourztgSzbgBza1gEMAzm1g10za2gEMAzm2g21zi1gMACDzv"; // month, 6-hours
+
+	document.getElementById("externalChartLink").setAttribute('href',bitcoinchartsUrl);
+
 	redrawChart();
 }
 
@@ -117,20 +135,55 @@ function popupUpdateCounter() {
 function redrawChart() {
 	if (localStorage.chartVisible==1) {
 		document.getElementById("chart").style.display="block";
+		document.getElementById("EMAChartHead").style.display="block";
 
 		nowDate=new Date();
 		nowDateStr=nowDate.getFullYear()+"-"+padit(nowDate.getMonth()+1)+"-"+padit(nowDate.getDate());
 
-		// Calculate the chart scale (max/min of y-value)
-		var chartMinY=bp.H1[0];
-		var chartMaxY=bp.H1[0];
-		for (var i=0;i<bp.H1.length;i++) {
+		var chartWidth=285;
+		var chartHeight=100;
+		var switchesUp=[];
+		var switchesDown=[];
+		var latestSolidTrend=0;
+		//var lastSwitch=0;
+		
+		//var visibleSamples=Math.min(bp.H1.length,(bp.LogLines==0?bp.MaxSamplesToKeep-bp.preSamples:bp.LogLines));
+		var visibleSamples=Math.min(bp.H1.length,(visibleChartSamples==0?bp.MaxSamplesToKeep-bp.preSamples:visibleChartSamples));
+		var visibleStartIndex=bp.H1.length-visibleSamples;
+		var H1Visible=[];
+		var emaShortVisible=[];
+		var emaLongVisible=[];
+		var timVisible=[];
+
+		var visibleDays=0;
+		var visibleHours=0;
+		var visibleMinutes=(visibleSamples*bp.tradingIntervalMinutes);
+		if (visibleMinutes>59) {
+			visibleHours=Math.floor(visibleMinutes/60);
+			visibleMinutes=visibleMinutes-visibleHours*60;
+		}
+		if (visibleHours>23) {
+			visibleDays=Math.floor(visibleHours/24);
+			visibleHours=visibleHours-visibleDays*24;
+		}
+		document.getElementById("chartTimeSpan").innerHTML=(visibleDays>0?visibleDays+" days ":"")+(visibleHours>0?visibleHours+ " hrs ":"")+(visibleMinutes>0?visibleMinutes+" min":"");
+
+		// Calculate the chart scale (max/min of y-value) and find where the trend switches (for the first time in each direction)
+		var chartMinY=bp.H1[visibleStartIndex];
+		var chartMaxY=bp.H1[visibleStartIndex];
+		for (var i=visibleStartIndex;i<bp.H1.length;i++) {
+			H1Visible.push(bp.H1[i]);
+			timVisible.push(bp.tim[i]);
+			
 			if (chartMinY>bp.H1[i])
 				chartMinY=bp.H1[i];
 			if (chartMaxY<bp.H1[i])
 				chartMaxY=bp.H1[i];
 			
 			try {
+				emaShortVisible.push(bp.emaShort[i]);
+				emaLongVisible.push(bp.emaLong[i]);
+				
 				if (chartMinY>bp.emaShort[i])
 					chartMinY=bp.emaShort[i];
 				if (chartMaxY<bp.emaShort[i])
@@ -144,53 +197,48 @@ function redrawChart() {
 				// Exception - probably because the length of emaShort or emaLong is less that H1 - no big deal...
 			}
 		}
-
+		
+		for (var i=4;i<bp.H1.length-1;i++) {
+			var trend=bp.getTrendAtIndex(i);
+  		if ((latestSolidTrend!=3)&&(trend==3)) {
+  			// Trend switch up!
+  			switchesUp.push([i,Math.min(Math.min(bp.H1[i],bp.emaShort[i]),bp.emaLong[i])]);
+  			latestSolidTrend=3;
+  		} else if ((latestSolidTrend!=-3)&&(trend==-3)) {
+    			// Trend switch down!
+    		switchesDown.push([i,Math.max(Math.max(bp.H1[i],bp.emaShort[i]),bp.emaLong[i])]);
+    		latestSolidTrend=-3;
+  		}
+		}
 
     // settings: http://omnipotent.net/jquery.sparkline/#s-docs
-    $('#EMAChart').sparkline(bp.H1,{
-	    type: 'line',
-	    lineColor: '#0000FF',
-	    fillColor: false,
-	    lineWidth: 2,
-	    minSpotColor: false,
-	    maxSpotColor: false,
-	    spotColor: false,
-	    composite: false,
-	    width: '95%',
-	    height: '100px',
-	    tooltipContainer: document.getElementById("chart"),
-	    tooltipClassname: 'chartTooltip',
-	    tooltipFormatter: formatFirstTooltip,
-	    highlightLineColor: '#CCC',
-	    highlightSpotColor: '#000',
-	    xvalues: bp.tim,
-	    chartRangeMin: chartMinY,
-	    chartRangeMax: chartMaxY
-		});
-		if (bp.emaShort.length>=bp.H1.length) {
-			$('#EMAChart').sparkline(bp.emaShort,{
+		var lineDrawn=false;
+		if (emaShortVisible.length>=H1Visible.length) {
+			$('#EMAChart').sparkline(emaShortVisible,{
 				lineColor: '#008800',			
 				fillColor: false,
-				composite: true,
-				width: '95%',
-				lineWidth: 1,
+				composite: false,
+	    	width: chartWidth+'px',
+	    	height: chartHeight+'px',
+	    	lineWidth: 1,
 		    minSpotColor: false,
 		    maxSpotColor: false,
 				spotColor: false,
 				tooltipFormatter: formatEMAShortTooltip,
 				highlightLineColor: '#CCC',
 				highlightSpotColor: '#000',
-				xvalues: bp.tim,
+				xvalues: timVisible,
 		    chartRangeMin: chartMinY,
 		    chartRangeMax: chartMaxY				
 			});
+			lineDrawn=true;
 		}
-		if (bp.emaLong.length>=bp.H1.length) {
-			$('#EMAChart').sparkline(bp.emaLong,{
+		if (emaLongVisible.length>=H1Visible.length) {
+			$('#EMAChart').sparkline(emaLongVisible,{
 				lineColor: '#B00000',
 				fillColor: false,
-				composite: true,
-				width: '95%',
+				composite: (lineDrawn?true:false),
+				width: chartWidth+'px',
 				lineWidth: 1,
 		    minSpotColor: false,
 		    maxSpotColor: false,
@@ -198,13 +246,58 @@ function redrawChart() {
 				tooltipFormatter: formatEMALongTooltip,
 				highlightLineColor: '#CCC',
 				highlightSpotColor: '#000',
-				xvalues: bp.tim,
+				xvalues: timVisible,
 		    chartRangeMin: chartMinY,
 		    chartRangeMax: chartMaxY				
 			});
+			lineDrawn=true;
+		}
+    $('#EMAChart').sparkline(H1Visible,{
+	    type: 'line',
+	    lineColor: '#0000FF',
+	    fillColor: false,
+	    lineWidth: 1,
+	    minSpotColor: false,
+	    maxSpotColor: false,
+	    spotColor: false,
+	    composite: (lineDrawn?true:false),
+	    width: chartWidth+'px',
+	    tooltipContainer: document.getElementById("chart"),
+	    tooltipClassname: 'chartTooltip',
+	    tooltipFormatter: formatPriceTooltip,
+	    highlightLineColor: '#CCC',
+	    highlightSpotColor: '#000',
+	    xvalues: timVisible,
+	    chartRangeMin: chartMinY,
+	    chartRangeMax: chartMaxY
+		});
+
+		
+		// Draw trend switch arrows
+		var indicatorCanvasOffset=4;
+		var indicatorCanvas=document.getElementById("indicatorCanvas");		
+		if (!indicatorCanvas) {
+			indicatorCanvas=document.createElement('canvas');
+			indicatorCanvas.id="indicatorCanvas";
+			indicatorCanvas.setAttribute("width",chartWidth);
+			indicatorCanvas.setAttribute("height",(chartHeight+2*indicatorCanvasOffset));
+			indicatorCanvas.setAttribute("style","position:absolute;top:0px;left:0px;z-index:2000;pointer-events:none;margin:auto;margin-top:-4px;width:"+chartWidth+"px;height:"+(chartHeight+2*indicatorCanvasOffset+1)+"px;");
+			document.getElementById("EMAChart").appendChild(indicatorCanvas);
+		}
+		var ctx =indicatorCanvas.getContext('2d');
+		for (var i=0;i<switchesUp.length;i++) {
+			var x=Math.round((switchesUp[i][0]-visibleStartIndex)/(visibleSamples-1)*(chartWidth-3)-3);
+			var y=Math.min(chartHeight-Math.round((switchesUp[i][1]-chartMinY)/(chartMaxY-chartMinY)*chartHeight)+5+indicatorCanvasOffset,chartHeight+2*indicatorCanvasOffset-6);
+			ctx.drawImage(upImg,x,y);
+		}
+		for (var i=0;i<switchesDown.length;i++) {
+			var x=Math.round((switchesDown[i][0]-visibleStartIndex)/(visibleSamples-1)*(chartWidth-3)-3);
+			var y=Math.max(chartHeight-Math.round((switchesDown[i][1]-chartMinY)/(chartMaxY-chartMinY)*chartHeight)-10-5+indicatorCanvasOffset,-5);
+			ctx.drawImage(downImg,x,y);
 		}
 	} else {
 		document.getElementById("chart").style.display="none";
+		document.getElementById("EMAChartHead").style.display="none";
 	}
 }
 
@@ -212,19 +305,18 @@ function formatChartNumbers(v) {
 	return v.toFixed(3);
 }
 
-function formatFirstTooltip(sp, options, fields){
-	var d=new Date(fields.x*60*1000);
-	var dateStr=d.getFullYear()+"-"+padit(d.getMonth()+1)+"-"+padit(d.getDate());
-	var t=(dateStr!=nowDateStr?dateStr:"Today")+" "+padit(d.getHours()) + ":"+padit(d.getMinutes());
-  return '<div align="center">'+t+ '<table width="100%" border="0"><tr><td align="left" class="tooltipTableCell"><span style="color: '+fields.color+'">&#9679;</span> Price: '+formatChartNumbers(fields.y)+'<br>';
-}
-
 var lastEmaTime=0;
 var lastEmaShort=0;
+var lastEMAShortTooltipLine="";
+var lastEMALongTooltipLine="";
+var lastTrendTooltipLine="";
+var lastPriceTooltipLine="";
+
 function formatEMAShortTooltip(sp, options, fields){
 	lastEmaTime=fields.x;
-	lastEmaShort=fields.y;	
-  return '<span style="color: '+fields.color+'">&#9679;</span> EMA'+bp.EmaShortPar+': '+formatChartNumbers(fields.y)+'<br>';
+	lastEmaShort=fields.y;
+	lastEMAShortTooltipLine='<span style="color: '+fields.color+'">&#9679;</span> EMA'+bp.EmaShortPar+': '+formatChartNumbers(fields.y);
+  return ""; // Don't draw until last curve's tooltip is calculated...
 }
 
 function formatEMALongTooltip(sp, options, fields){
@@ -237,15 +329,42 @@ function formatEMALongTooltip(sp, options, fields){
     var trendIndicator=((lastEmaShort-fields.y) / ((lastEmaShort+fields.y)/2)) * 100;
 
     if (lastEmaTime==fields.x) {
-    	if (trendIndicator>0)
+    	if (trendIndicator>0) {
     		trend='<img class="trendIndicatorImg" src="trend_'+(trendIndicator>bp.MinBuyThreshold?'strong':'weak')+'_up.gif">';
-    	else if (trendIndicator<0)
+    	} else if (trendIndicator<0) {
     		trend='<img class="trendIndicatorImg" src="trend_'+(-trendIndicator>bp.MinSellThreshold?'strong':'weak')+'_down.gif">';
-    	else
+    	} else {
     		trend='none';
+    	}  	
     }
+    lastEMALongTooltipLine='<span style="color: '+fields.color+'">&#9679;</span> EMA'+bp.EmaLongPar+': '+formatChartNumbers(fields.y);
+    lastTrendTooltipLine='Trend: '+trend+' '+formatChartNumbers(trendIndicator)+'%';
+    return ""; // Don't draw until last curve's tooltip is calculated...
+}
 
-    return '<span style="color: '+fields.color+'">&#9679;</span> EMA'+bp.EmaLongPar+': '+formatChartNumbers(fields.y)+'</td></tr></table>Trend: '+trend+' '+formatChartNumbers(trendIndicator)+'%';
+function formatPriceTooltip(sp, options, fields){
+	lastPriceTooltipLine='<span style="color: '+fields.color+'">&#9679;</span> Price: '+formatChartNumbers(fields.y);
+  return assembleTooltip(fields.x); // This is the last curve, so draw the final tooltip
+}
+
+function assembleTooltip(tim) {
+	var d=new Date(tim*60*1000);
+	var dateStr=d.getFullYear()+"-"+padit(d.getMonth()+1)+"-"+padit(d.getDate());
+	var t=(dateStr!=nowDateStr?dateStr:"Today")+" "+padit(d.getHours()) + ":"+padit(d.getMinutes());
+	var tooltip='<div align="center">'+t+
+  						'<table width="100%" border="0"><tr><td align="center" class="tooltipTableCell">'+
+  						lastPriceTooltipLine+'<br>'+
+		  				lastEMAShortTooltipLine+'<br>'+
+		  				lastEMALongTooltipLine+'<br>'+
+		  				'</td></tr></table>'+
+		  				lastTrendTooltipLine;
+  				
+	lastEMAShortTooltipLine="";
+	lastEMALongTooltipLine="";
+	lastTrendTooltipLine="";
+	lastPriceTooltipLine="";
+	
+  return tooltip;	
 }
 
 function toggleChart() {
@@ -256,6 +375,42 @@ function toggleChart() {
 	}
 	redrawChart();
 }
+
+function zoomChart(zoomIn) {
+	var maxVisibleSamples=bp.MaxSamplesToKeep-bp.preSamples;
+	var visibleSamples=Math.min(bp.H1.length,(visibleChartSamples==0?maxVisibleSamples:visibleChartSamples));
+	var maxMinutes=parseInt(maxVisibleSamples*bp.tradingIntervalMinutes);
+	var visibleChartTimespan=visibleSamples*bp.tradingIntervalMinutes;
+	
+	var changeMinutes;
+	if (visibleChartTimespan<(60*3))
+		changeMinutes=30;
+	else if (visibleChartTimespan<(60*12))
+		changeMinutes=60;
+	else if (visibleChartTimespan<(60*24))
+		changeMinutes=60*3;
+	else if (visibleChartTimespan<(60*3*24))
+		changeMinutes=60*6;
+	else if (visibleChartTimespan<(60*4*24))
+		changeMinutes=60*12;
+	else
+		changeMinutes=60*24;
+	
+	if (zoomIn) {
+		visibleChartTimespan=Math.max(30,visibleChartTimespan-changeMinutes);
+	} else {
+		visibleChartTimespan=Math.min(maxMinutes,visibleChartTimespan+changeMinutes);
+	}
+	visibleChartSamples=(visibleChartTimespan==maxMinutes?0:Math.max(10,parseInt(visibleChartTimespan/bp.tradingIntervalMinutes)));
+	redrawChart();
+}
+
+var upImg = new Image();
+var downImg = new Image();
+upImg.onload = refreshtable;
+downImg.onload = refreshtable;
+upImg.src = 'trend_strong_up.gif';
+downImg.src = 'trend_strong_down.gif';
 
 refreshtable();
 bp.popupRefresh=refreshtable;
@@ -273,4 +428,20 @@ document.addEventListener('DOMContentLoaded', function() {
 		chrome.browserAction.setIcon({path: 'robot_trading_off.png'});
 		refreshtable();
 	});
-})
+	zoomIn.addEventListener('click', function(e){
+		zoomChart(true);
+		return false;
+	});
+	zoomOut.addEventListener('click', function(e){
+		zoomChart(false);
+		return false;
+	});
+	
+	visibleChartSamples=bp.LogLines;
+
+	document.getElementById("EMAChart").addEventListener("mousewheel", function(e) {
+		var delta = Math.max(-1,Math.min(1,(e.wheelDelta || -e.detail)));
+		zoomChart(delta>0);
+		return false;
+	}, false);	
+});

@@ -69,7 +69,8 @@ td.err {
 	filter:progid:DXImageTransform.Microsoft.gradient(startColorstr=#99000000, endColorstr=#99000000);
 	-ms-filter: "progid:DXImageTransform.Microsoft.gradient(startColorstr=#99000000, endColorstr=#99000000)";
 	color: white;
-	font: 10px arial, san serif;
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size: 10px;
 	text-align: left;
 	white-space: nowrap;
 	padding: 5px;
@@ -80,7 +81,7 @@ td.err {
 }
 .tooltipTableCell {
 	color: white;
-	font: 10px arial, san serif;
+	font: 10px arial, sans serif;
 	text-align: left;
 	white-space: nowrap;
 	width:100%;
@@ -90,12 +91,47 @@ td.err {
 	vertical-align:top;
 	margin:2px 3px 0px 3px;
 }
-.lnk {
+.lnkWrap {
 	color:#666;
 }
-.lnk span {
+.lnk {
 	text-decoration:underline;
 	cursor:pointer;
+	-webkit-user-select: none;
+}
+.lnk:hover {
+	color: #DD6622;
+}
+.zoomLnk {
+	font-weight:bold;
+	text-decoration:none;
+	font-size: 10px;
+}
+#zoomIn{
+	margin-left:10px;
+}
+#externalChartLink {
+	color:#D0D0D0;
+	font-weight:normal;
+}
+#externalChartLink:hover {
+	color: #DD6622;
+}
+
+#EMAChartHead {
+	width:100%;
+	height:18px;	
+	box-sizing:border-box;
+	margin:6px 0 0 0;
+	padding:2px 8px;
+	border-top:1px solid gray;
+	background-color: black;
+	color: white;
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size:10px;
+	white-space: nowrap;
+	text-align: center;
+	font-weight:bold;
 }
 </style>
 </head>
@@ -117,10 +153,10 @@ td.err {
 			<td class="d" colspan="5">
 				<div style="position:relative">
 					<span id="tradingEnabledStatus" style="display:none">
-						<span style="color:#008000"><b>Trading is enabled</b> <span class="lnk">(<span id="disableTrading" title="Disable trading">disable</span>)</span></span>
+						<span style="color:#008000"><b>Trading is enabled</b> <span class="lnkWrap">(<span id="disableTrading" class="lnk" title="Disable trading">disable</span>)</span></span>
 					</span>
 					<span id="tradingDisabledStatus" style="display:none">
-						<span style="color:#A00000"><b>Trading is disabled</b> <span class="lnk">(<span id="enableTrading" title="Enable trading">enable</span>)</span></span>
+						<span style="color:#A00000"><b>Trading is disabled</b> <span class="lnkWrap">(<span id="enableTrading" class="lnk" title="Enable trading">enable</span>)</span></span>
 					</span>
 					<span style="position:absolute;right:0;top:0">
 						<img src="chart.png" id="chartLink" alt="Chart" title="Chart" style="cursor:pointer;position:absolute;right:17px;top:0px;margin:0 5px 0 0" border=0 width=15 height=12>
@@ -128,15 +164,18 @@ td.err {
 							<img src="options.png" alt="Options" title="Options" style="margin:-1px 0 0 0" border=0 width=13 height=13>
 						</a>
 					</span><br>
-					Sample interval: <span id="int"></span><!--&nbsp;&nbsp;&nbsp;&nbsp;Trade after: <span id="ticks"></span>--><br>
+					Sample interval: <span id="int"></span><br>
 					Buy threshold: <span id="buyTres"></span>%&nbsp;&nbsp;&nbsp;&nbsp;Sell threshold: -<span id="sellTres"></span>%<br>
 					Buy after: <span id="ticksBuy"></span>&nbsp;&nbsp;&nbsp;&nbsp;Sell after: <span id="ticksSell"></span><br>
 				</div>
 				
-				<span id="chart" style="width:100%;box-sizing:border-box;display:none;height:110px;background-color:#F0F0F0;border-top:1px solid gray;margin:6px 0 -4px 0;padding:4px 0">
-					<span id="EMAChart" style="max-width:310px;height:100px;box-sizing:border-box;margin:0">Loading..</span>
+				<div id="EMAChartHead" style="display:none">
+					<div style="float:left">Timespan: <span id="chartTimeSpan" ></span></div><div style="float:right;font-weight:normal;">(<a href="http://www.bitcoincharts.com" id="externalChartLink" target="externalChart">bitcoincharts</a>)<span id="zoomIn" class="lnk zoomLnk">+</span>/<span id="zoomOut" class="lnk zoomLnk">-</span></div>
+				</div>
+				<div id="chart" style="width:100%;box-sizing:border-box;display:none;height:110px;background-color:#F0F0F0;border-top:1px solid #D0D0D0;margin:0px 0 -4px 0;padding:4px 0">
+					<div id="EMAChart" style="position:relative;width:285px;height:100px;box-sizing:border-box;margin:auto;">Loading..</div>
 					<div id="tooltipContiner" style="max-width:50px"></div>
-				</span>
+				</div>
 			</td>
 		</tr>
 		<tr>

@@ -1,10 +1,11 @@
 <style>
 body {
 	font-family: Verdana, Arial, Helvetica, sans-serif;
+	font-size:12px;
 }
 table.top {
 	border: 2px solid black;
-	padding: 5px;
+	padding: 10px;
 	width:550px;
 	background-color:#F0F0C0;
 }
@@ -12,7 +13,7 @@ table.top {
 	padding:20px;
 	vertical-align:top;	
 }
-table.top td {
+td {
 	font-size:12px;
 }
 
@@ -31,6 +32,7 @@ sup {
 }
 .r {
 	text-align:right;
+	padding-right:2px;
 }
 .note {
 	font-size:11px;
@@ -43,12 +45,27 @@ sup {
 .stat {
 	text-align:center;
 }
+.EMASettingsCell {
+	padding:4px 6px;
+	background:#FFA;
+}
+.experimentalRulesSettingsCell {
+	display:block;
+	padding:4px 6px;
+	background:#DDC;
+}
+.top{
+	vertical-align:top;
+}
+.smallFont {
+	font-size:10px;
+}
 </style>
 <table border="0" style="width:100%;max-width:1100px">
 	<tr>
 		<td class="outer">
 			
-			<table cellpadding="2" class="top">
+			<table cellpadding="3" cellspacing="0" class="top">
 				<form>
 					<tr>
 					 <td nowrap="nowrap" style="vertical-align:top;padding-top:5px;">MtGox API Key<sup> 1</sup></td>
@@ -90,6 +107,8 @@ sup {
 								<option value="60">1 hour</option>
 								<option value="120">2 hours</option>
 								<option value="180">3 hours</option>
+								<option value="240">4 hours</option>
+								<option value="300">5 hours</option>
 							</select>
 						</td>
 					</tr>
@@ -109,18 +128,27 @@ sup {
 								<option value="72">3 days</option>
 								<option value="96">4 days</option>
 								<option value="120">5 days</option>
-							</select> (max 144 ticks)
+								<option value="240">10 days</option>
+								<option value="0">Max</option>
+							</select> (max <span id="maxVisibleSamples"></span> samples)
 						</td>
 					</tr>
 
 
 					<tr>
-						<td nowrap="nowrap" style="padding-top:25px;">Trend indicator</td>
-						<td style="padding-top:25px;">EMA(<input type="text" size="2" maxlength="2" id="emas" class="mono r">) / EMA(<input type="text" size="2" maxlength="2" id="emal" class="mono r">)</td>
+						<td colspan="2" style="padding-top:1px;">&nbsp;</td>
 					</tr>
-
 					<tr>
-						<td colspan="2" style="padding-top:25px">
+						<td class="EMASettingsCell" colspan="2">
+							EMA settings:
+						</td>
+					</tr>
+					<tr>
+						<td class="EMASettingsCell" nowrap="nowrap">Trend indicator</td>
+						<td class="EMASettingsCell">EMA(<input type="text" size="2" maxlength="2" id="emas" class="mono r">) / EMA(<input type="text" size="2" maxlength="2" id="emal" class="mono r">)</td>
+					</tr>
+					<tr>
+						<td class="EMASettingsCell" colspan="2" >
 							<table width="400" cellpadding=0 cellspacing=0>
 								<tr>
 									<td width="50%">Buy threshold: <input type="text" size="4" maxlength="4" id="buy_tras" class="mono r">%<sup> 2</sup></td>
@@ -130,7 +158,7 @@ sup {
 						</td>
 					</tr>
 					<tr>
-						<td colspan="2">
+						<td class="EMASettingsCell" colspan="2">
 							<table width="400" cellpadding=0 cellspacing=0>
 								<tr>
 									<td width="50%">Buy after 
@@ -154,13 +182,75 @@ sup {
 								</tr>
 							</table>
 						</td>
+					</tr>
+					
+					<tr>
+						<td class="experimentalRulesSettingsCell" colspan="2" style="background:inherit;padding-top:1px;">&nbsp;</td>
 					</tr>					
 					<tr>
-						<td colspan="2" style="padding-top:25px">
+						<td class="experimentalRulesSettingsCell" colspan="2">
+							Experimantal settings: <span style="display:inline-block;background:#FF0000;color:#FFF;padding:2px 5px; margin:0 5px">Use at your own risk!!</span>
+						</td>
+					</tr>
+					<tr>
+						<td class="experimentalRulesSettingsCell" colspan="2">
+							<table width="520" cellpadding=0 cellspacing=0>
+								<tr>
+									<td class="experimentalRulesSettingsCell top" style="width:150px;padding:0">
+										Trade <b>only</b> on trend switches
+									</td>
+									<td class="experimentalRulesSettingsCell top" >
+										 <input type="checkbox" value="true" id="tradeOnlyAfterSwitch" style="margin-top:-3px">
+									</td>
+									<td class="experimentalRulesSettingsCell smallFont top" style="padding-top:0;padding-bottom:10px;">
+										Only trade after a trend switch. I.e. when turning on the bot, it will NOT start trading until the current trend turns (unless the very latest sample triggered a switch). This is actually more close to Goomboo's original strategy. If you find yourself in the wrong position between trend switches, you should wait until the next swing.
+									</td>
+								</tr>
+								<tr>
+									<td class="experimentalRulesSettingsCell top" style="padding:0">
+										<nobr>Invert EMA-strategy</nobr>
+									</td>
+									<td class="experimentalRulesSettingsCell top" >
+										 <input type="checkbox" value="true" id="inverseEMA" style="margin-top:-3px">
+									</td>
+									<td class="experimentalRulesSettingsCell smallFont top" style="padding-top:0;padding-bottom:10px;">
+										A.k.a. "The Crazy Ivan"! When the EMA-strategy is reversed, the bot will buy when it's supposed to sell, and sell when it should buy! :) There are absolutely NO theories supporting this strategy, however, when the market is ranging and you feel that the bot is always 180 degrees out of phase with the swings, it might work. Maybe...
+									</td>
+								</tr>								
+							</table>
+						</td>
+					</tr>
+<!--
+					<tr>
+						<td class="experimentalRulesSettingsCell" colspan="2">
+							These rules are 
+							<select id="simpleRulesMode" class="mono">
+								<option value="0">disabled</option>
+								<option value="1">enabled, but only used when the EMA-indicator is right</option>
+								<option value="2">enabled, overriding the EMA-indicator!</option>
+							</select>
+						</td>
+					</tr>
+					<tr>
+						<td class="experimentalRulesSettingsCell" colspan="2">
+							<table width="520" cellpadding=0 cellspacing=0>
+								<tr>
+									<td width="50%">Buy if price is below: <input type="text" size="7" maxlength="8" id="simple_buy_below" class="mono r"> <span class="fiatUnit">USD</span></td>
+									<td align="right" style="padding-right:10px">Sell if price is above: <input type="text" size="7" maxlength="8" id="simple_sell_above" class="mono r"> <span class="fiatUnit">USD</span></td>
+								</tr>
+							</table>
+						</td>
+					</tr>
+-->					
+					<tr>
+						<td colspan="2" style="padding-top:1px;">&nbsp;</td>
+					</tr>
+					<tr>
+						<td colspan="2">
 							<table width="400" height="20" cellpadding=0 cellspacing=0>
 								<tr>
 									<td width="50%">Fiat currency: 
-										<select id="currency" class="mono">
+										<select id="currencySelector" class="mono">
 											<option value="USD">USD</option>
 											<option value="AUD">AUD</option>
 											<option value="CAD">CAD</option>
@@ -180,14 +270,16 @@ sup {
 											<option value="NOK">NOK</option>
 											<option value="CZK">CZK</option>
 										</select>										
-										<!--<input type="text" size="6" id="currency" class="mono"></td>-->
-									<td>Keep BTC: <input type="text" size="6" id="keepBTC" class="mono"></td>
+									<td>Keep BTC: <input type="text" size="10" id="keepBTC" class="mono r"></td>
 									<!--<td>Keep Fiat: <input type="text" size="6" id="keepFiat" class="mono"></td>-->
 								</tr>
 							</table>
 						</td>
 					</tr>
 					
+					<tr>
+						<td colspan="2" style="padding-top:1px;">&nbsp;</td>
+					</tr>					
 					<tr>
 					 <td colspan="2" align="center">
 					  <input type="button" style="width:200px;" id="butres" value="Reset to defaults">
@@ -215,7 +307,7 @@ sup {
 			</div>
 <br>
 			<div class="note stat" style="background-color:#F0F0C0;padding:8px 0px; margin-top:10px; line-height:15px">
-				Modified by TobbeLino<br>If you like my modifications, feel free to donate :) <b>1LUqdAXvH9gbYemZKeiMrVJ5njhm6ZvKmF</b>
+				Modified and enhanced by TobbeLino<br>If you like my modifications, please make a donation! :) <b>1LUqdAXvH9gbYemZKeiMrVJ5njhm6ZvKmF</b>
 			</div>
 		</td> 
 	</tr>

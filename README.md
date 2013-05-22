@@ -60,6 +60,18 @@ Click the link after Inspect views: "_generated_background_page.html" next to th
 Changelog
 =========
 
+0.2.2.0
+- Indicator arrows in graph
+- Thinner price line
+- Zoomable chart
+- Added link to external charts (at bitcoincharts.com)
+- Experimental section added
+- Experimental feature: Only trade after trend switch (if starting the bot between trend switches, wait until next swicth)
+- Experimental feature: "The Crazy Ivan" - reverse the EMA-logic: The bot will sell when it's supposed to buy, and buy when it's supposed to sell!
+- Lowered retry-rate when failed to fetch user info (retry after 1 minute instead of 10 seconds) to avoid hammering MtGox
+- More robust handling of network problems (updates could stop after a network loss) - bot should now update and resume within a minute
+- Better handling when computer resumes from sleep (updates could stop after sleep) - bot should now update and resume within a minute
+
 0.2.1.8
 - Fixed stupid bug, not fetching last sample properly ("Update not finished - do not trade!" in the console log)
 
