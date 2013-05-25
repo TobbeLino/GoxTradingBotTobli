@@ -38,6 +38,13 @@ function refreshtable() {
 		document.getElementById("tradingEnabledStatus").style.display="none";
 		document.getElementById("tradingDisabledStatus").style.display="block";
 	}
+	
+	var experimentalSettingsInfo="";
+	if (bp.tradeOnlyAfterSwitch==1)
+		experimentalSettingsInfo="<span class=\"experimentalSettingInfo\">Trade only after switch!</span>";
+	if (bp.inverseEMA==1)
+		experimentalSettingsInfo+="<span class=\"experimentalSettingInfo\">Inverse EMA enabled!</span>";
+	document.getElementById("experimentalSettings").innerHTML=experimentalSettingsInfo;
 		
 	while (tab.rows.length>4)
 		tab.deleteRow(4);
@@ -107,17 +114,17 @@ function refreshtable() {
 	
 	var bitcoinchartsUrl;
 	if (bp.tradingIntervalMinutes<10)
-		bitcoinchartsUrl="http://www.bitcoincharts.com/charts/mtgoxUSD#rg1zig5-minztgSzbgBza1gEMAzm1g10za2gEMAzm2g21zi1gMACDzv";  // 1 day, 5-min, Candlestick , Bollinger Band, EMA(10), EMA(21), MACD
+		bitcoinchartsUrl="http://www.bitcoincharts.com/charts/mtgoxUSD#rg1zig5-minztgSzbgBza1gEMAzm1g"+bp.EmaShortPar+"za2gEMAzm2g"+bp.EmaLongPar+"zi1gMACDzv";  // 1 day, 5-min, Candlestick , Bollinger Band, EMA(10), EMA(21), MACD
 	else if (bp.tradingIntervalMinutes<30)
-		bitcoinchartsUrl="http://www.bitcoincharts.com/charts/mtgoxUSD#rg1zig15-minztgSzbgBza1gEMAzm1g10za2gEMAzm2g21zi1gMACDzv"; // 1 day, 15-min
+		bitcoinchartsUrl="http://www.bitcoincharts.com/charts/mtgoxUSD#rg1zig15-minztgSzbgBza1gEMAzm1g"+bp.EmaShortPar+"za2gEMAzm2g"+bp.EmaLongPar+"zi1gMACDzv"; // 1 day, 15-min
 	else if (bp.tradingIntervalMinutes<60)
-		bitcoinchartsUrl="http://www.bitcoincharts.com/charts/mtgoxUSD#rg2zig30-minztgSzbgBza1gEMAzm1g10za2gEMAzm2g21zi1gMACDzv"; // 2 days, 30-min
+		bitcoinchartsUrl="http://www.bitcoincharts.com/charts/mtgoxUSD#rg2zig30-minztgSzbgBza1gEMAzm1g"+bp.EmaShortPar+"za2gEMAzm2g"+bp.EmaLongPar+"zi1gMACDzv"; // 2 days, 30-min
 	else if (bp.tradingIntervalMinutes<120)
-		bitcoinchartsUrl="http://www.bitcoincharts.com/charts/mtgoxUSD#rg5zigHourlyztgSzbgBza1gEMAzm1g10za2gEMAzm2g21zi1gMACDzv"; // 5 days, hourly
+		bitcoinchartsUrl="http://www.bitcoincharts.com/charts/mtgoxUSD#rg5zigHourlyztgSzbgBza1gEMAzm1g"+bp.EmaShortPar+"za2gEMAzm2g"+bp.EmaLongPar+"zi1gMACDzv"; // 5 days, hourly
 	else if (bp.tradingIntervalMinutes<=180)
-		bitcoinchartsUrl="http://www.bitcoincharts.com/charts/mtgoxUSD#rg10zig2-hourztgSzbgBza1gEMAzm1g10za2gEMAzm2g21zi1gMACDzv"; // 10 days, 2-hours
+		bitcoinchartsUrl="http://www.bitcoincharts.com/charts/mtgoxUSD#rg10zig2-hourztgSzbgBza1gEMAzm1g"+bp.EmaShortPar+"za2gEMAzm2g"+bp.EmaLongPar+"zi1gMACDzv"; // 10 days, 2-hours
 	else
-		bitcoinchartsUrl="http://www.bitcoincharts.com/charts/mtgoxUSD#rg30zig6-hourztgSzbgBza1gEMAzm1g10za2gEMAzm2g21zi1gMACDzv"; // month, 6-hours
+		bitcoinchartsUrl="http://www.bitcoincharts.com/charts/mtgoxUSD#rg30zig6-hourztgSzbgBza1gEMAzm1g"+bp.EmaShortPar+"za2gEMAzm2g"+bp.EmaLongPar+"zi1gMACDzv"; // month, 6-hours
 
 	document.getElementById("externalChartLink").setAttribute('href',bitcoinchartsUrl);
 
@@ -215,15 +222,18 @@ function redrawChart() {
 		var lineDrawn=false;
 		if (emaShortVisible.length>=H1Visible.length) {
 			$('#EMAChart').sparkline(emaShortVisible,{
+				type: 'line',
 				lineColor: '#008800',			
 				fillColor: false,
+				lineWidth: 1,
 				composite: false,
 	    	width: chartWidth+'px',
 	    	height: chartHeight+'px',
-	    	lineWidth: 1,
 		    minSpotColor: false,
 		    maxSpotColor: false,
 				spotColor: false,
+				tooltipContainer: document.getElementById("chart"),
+				tooltipClassname: 'chartTooltip',
 				tooltipFormatter: formatEMAShortTooltip,
 				highlightLineColor: '#CCC',
 				highlightSpotColor: '#000',
@@ -235,14 +245,18 @@ function redrawChart() {
 		}
 		if (emaLongVisible.length>=H1Visible.length) {
 			$('#EMAChart').sparkline(emaLongVisible,{
+				type: 'line',
 				lineColor: '#B00000',
 				fillColor: false,
+				lineWidth: 1,
 				composite: (lineDrawn?true:false),
 				width: chartWidth+'px',
-				lineWidth: 1,
+				height: chartHeight+'px',
 		    minSpotColor: false,
 		    maxSpotColor: false,
 				spotColor: false,
+				tooltipContainer: document.getElementById("chart"),
+				tooltipClassname: 'chartTooltip',
 				tooltipFormatter: formatEMALongTooltip,
 				highlightLineColor: '#CCC',
 				highlightSpotColor: '#000',
@@ -262,6 +276,7 @@ function redrawChart() {
 	    spotColor: false,
 	    composite: (lineDrawn?true:false),
 	    width: chartWidth+'px',
+	    height: chartHeight+'px',
 	    tooltipContainer: document.getElementById("chart"),
 	    tooltipClassname: 'chartTooltip',
 	    tooltipFormatter: formatPriceTooltip,
@@ -357,7 +372,7 @@ function assembleTooltip(tim) {
 		  				lastEMAShortTooltipLine+'<br>'+
 		  				lastEMALongTooltipLine+'<br>'+
 		  				'</td></tr></table>'+
-		  				lastTrendTooltipLine;
+		  				lastTrendTooltipLine+'</div>';
   				
 	lastEMAShortTooltipLine="";
 	lastEMALongTooltipLine="";

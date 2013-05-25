@@ -33,13 +33,16 @@ Enhanced features of this modified bot
 
  * Possibility to disable actual trading (the bot does everything, except the actual trading). Good for testing if e.g. a changed sample interval will cause a trend switch and would trigger an immediate trade.
  
- * Show chart with price and EMA-values
+ * Zoomable chart with price, EMA-values and trigger indicators
 
  * Caching trade data to avoid hammering of MtGox and faster loading
  
  * Option to always start the bot in "disabled" mode to avoid instant accidental trading with "bad" settings from last run.
  
  * Using MtGox API v2 for more reliable access
+ 
+ * Improved stability on networks problems and MtGox access failures
+ 
 
 
 	
@@ -59,6 +62,12 @@ Click the link after Inspect views: "_generated_background_page.html" next to th
 
 Changelog
 =========
+
+0.2.2.1
+- Show proper EMA-lines in the external link to bitcoincharts.com (however, bitcoincharts don't have the exact same intervals as this bot)
+- Fixed wrong popup-windows height when the chart tooltip showed
+- Added info about "experimantal settings" in popup-window
+- Fixed a bug where "Trade only on trend switches" could be interpreted as "enabled" if settings had not been saved
 
 0.2.2.0
 - Indicator arrows in graph

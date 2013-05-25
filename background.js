@@ -118,7 +118,8 @@ function updateInfo() {
 					refreshPopup(true);
 				}
 			} catch (e) {
-				console.log(e);//+" "+d.currentTarget.responseText);
+				//log(e+" "+d.currentTarget.responseText);
+				log(e);
 				chrome.browserAction.setTitle({title: "Exception parsing user info. MtGox problem?"});
 			}
 			schedUpdateInfo(5*60*1000); // Update balance every 5 minutes (should be smaller than the trading interval?)
@@ -181,7 +182,33 @@ function getemadif(idx) {
 	return 100 * (ces-cel) / ((ces+cel)/2);
 }
 
+function checkThresholdsAt(idx,buy) {
+	// Not yet in use... Test more!
+	if (buy) {
+		for (var i=0;i<tickCountBuy;i++) {
+			var dif = getemadif(idx-i);
+			if (dif<=MinBuyThreshold)
+				return false;
+		}
+		return true;
+	} else {
+		for (var i=0;i<tickCountSell;i++) {
+			var dif = getemadif(idx-i);
+			if (dif>=-MinSellThreshold)
+				return false;
+		}
+		return true;		
+	}
+}
+
 function getTrendAtIndex(i) {
+	// This function return the calculated trend at index i, with respect to EMA-values, thresholds and no of samples before triggering.
+	// Return values:
+	// 0		= no trend
+	// 1/-1	= weak trend up/down (below thresholds)
+	// 2/-2	= strong trend up/down (above thresholds)
+	// 3/-3	= strong trend up/down and enough samples has passed (according to settings "Buy/Sell after X samples")
+		
 	if ((H1.length<5)||(i<5)||(i>=H1.length)) {
 		// All data not available
 		return 0;
@@ -255,7 +282,7 @@ function trade() {
 
 			// Trend is up, also according to the "Buy after X samples"-setting
 
-			if ((tradeOnlyAfterSwitch)&&(latestSolidTrend==3)) {
+			if ((tradeOnlyAfterSwitch==1)&&(latestSolidTrend==3)) {
 				// tradeOnlyAfterSwitch==true but the trend has not switched: Don't trade
 				log("Trend has not switched (still up). The setting \"tradeOnlyAfterSwitch==true\", so do not trade...");
 				return;
@@ -301,7 +328,7 @@ function trade() {
 		if (currentTrend==-3) {
 			// Trend is down, also according to the "Sell after X samples"-setting
 
-			if ((tradeOnlyAfterSwitch)&&(latestSolidTrend==-3)) {
+			if ((tradeOnlyAfterSwitch==1)&&(latestSolidTrend==-3)) {
 				// tradeOnlyAfterSwitch==true but the trend has not switched: Don't trade
 				log("Trend has not switched (still down). The setting \"tradeOnlyAfterSwitch==true\", so do not trade...");
 				return;

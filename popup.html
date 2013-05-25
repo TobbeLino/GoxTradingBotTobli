@@ -133,6 +133,19 @@ td.err {
 	text-align: center;
 	font-weight:bold;
 }
+.experimentalSettingInfo{
+	display:inline-block;
+	background:#FF0000;
+	color:#FFF;
+	padding:1px 4px 2px 4px;
+	margin:2px 3px 0 3px;
+}
+.experimentalSettingInfo:first-child{
+	margin-left:1px;
+}
+.experimentalSettingInfo:last-child{
+	margin-right:1px;
+}
 </style>
 </head>
 <body>
@@ -147,7 +160,7 @@ td.err {
 		<tr id="balance">
 			<td class="c" colspan="5">
 				Balance = <span id="btc">0.00</span> BTC + <span id="usd">0.00</span><br>
-			</td width=20>
+			</td>
 		</tr>
 		<tr id="settings">
 			<td class="d" colspan="5">
@@ -167,14 +180,21 @@ td.err {
 					Sample interval: <span id="int"></span><br>
 					Buy threshold: <span id="buyTres"></span>%&nbsp;&nbsp;&nbsp;&nbsp;Sell threshold: -<span id="sellTres"></span>%<br>
 					Buy after: <span id="ticksBuy"></span>&nbsp;&nbsp;&nbsp;&nbsp;Sell after: <span id="ticksSell"></span><br>
+					<span id="experimentalSettings"></span>
 				</div>
 				
 				<div id="EMAChartHead" style="display:none">
-					<div style="float:left">Timespan: <span id="chartTimeSpan" ></span></div><div style="float:right;font-weight:normal;">(<a href="http://www.bitcoincharts.com" id="externalChartLink" target="externalChart">bitcoincharts</a>)<span id="zoomIn" class="lnk zoomLnk">+</span>/<span id="zoomOut" class="lnk zoomLnk">-</span></div>
+					<div style="float:left">
+						Timespan: <span id="chartTimeSpan" ></span>
+					</div>
+					<div style="float:right;font-weight:normal;">
+						(<a href="http://www.bitcoincharts.com" id="externalChartLink" target="externalChart">bitcoincharts</a>)
+						<span id="zoomIn" class="lnk zoomLnk">+</span>/<span id="zoomOut" class="lnk zoomLnk">-</span>
+					</div>
 				</div>
 				<div id="chart" style="width:100%;box-sizing:border-box;display:none;height:110px;background-color:#F0F0F0;border-top:1px solid #D0D0D0;margin:0px 0 -4px 0;padding:4px 0">
 					<div id="EMAChart" style="position:relative;width:285px;height:100px;box-sizing:border-box;margin:auto;">Loading..</div>
-					<div id="tooltipContiner" style="max-width:50px"></div>
+					<div id="tooltipContiner" style="max-width:50px;"></div>
 				</div>
 			</td>
 		</tr>
@@ -185,7 +205,6 @@ td.err {
 		</tr>
 	</table>
 </div>
-
 <script src="popup.js"></script>
 </body>
 </html>
