@@ -108,12 +108,12 @@ function updateInfo() {
 				if (useAPIv2)
 					rr=rr.data;
 
-				if (typeof(rr.Wallets[currency].Balance.value)=="undefined") {
+				if (typeof(rr.Wallets)=="undefined") {
 					log("Error fetching user info:"+ rr.error);
 					chrome.browserAction.setTitle({title: "Error getting balance. MtGox problem?"});
 				} else {
-					BTC = parseFloat(rr.Wallets.BTC.Balance.value);
-					fiat = parseFloat(rr.Wallets[currency].Balance.value);
+					BTC = (rr.Wallets["BTC"]?parseFloat(rr.Wallets["BTC"].Balance.value):0);
+					fiat = (rr.Wallets[currency]?parseFloat(rr.Wallets[currency].Balance.value):0);
 					chrome.browserAction.setTitle({title: (BTC.toFixed(3) + " BTC + " + fiat.toFixed(2) + " " + currency)});
 					refreshPopup(true);
 				}

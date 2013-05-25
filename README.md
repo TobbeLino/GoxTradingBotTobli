@@ -63,6 +63,9 @@ Click the link after Inspect views: "_generated_background_page.html" next to th
 Changelog
 =========
 
+0.2.2.2
+- Fixed error fetchig user info from MtGox when a currency with no funds (in MtGox) was selected in the settings
+
 0.2.2.1
 - Show proper EMA-lines in the external link to bitcoincharts.com (however, bitcoincharts don't have the exact same intervals as this bot)
 - Fixed wrong popup-windows height when the chart tooltip showed
