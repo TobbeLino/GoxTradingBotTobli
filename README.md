@@ -63,6 +63,9 @@ Click the link after Inspect views: "_generated_background_page.html" next to th
 Changelog
 =========
 
+0.2.2.3
+- Fixed bug with "Trading enabled" setting on startup when "Disabled on start" is unchecked (bot would always start with trading disabled)
+
 0.2.2.2
 - Fixed error fetchig user info from MtGox when a currency with no funds (in MtGox) was selected in the settings
 

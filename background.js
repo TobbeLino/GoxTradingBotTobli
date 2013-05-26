@@ -9,8 +9,8 @@ var ApiKey = localStorage.ApiKey || '';
 var ApiSec = localStorage.ApiSec || '';
 
 var tradingDisabledOnStart = (localStorage.tradingDisabledOnStart || 0);
-var tradingEnabled = (tradingDisabledOnStart? 0 : (localStorage.tradingEnabled || 0));
-if (tradingEnabled) {
+var tradingEnabled = (tradingDisabledOnStart==1 ? 0 : (localStorage.tradingEnabled || 0));
+if (tradingEnabled==1) {
 	chrome.browserAction.setIcon({path: 'robot_trading_on.png'});
 } else {
 	chrome.browserAction.setIcon({path: 'robot_trading_off.png'});

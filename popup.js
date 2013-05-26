@@ -435,12 +435,12 @@ document.addEventListener('DOMContentLoaded', function() {
 	chartLink.addEventListener('click', function(){toggleChart()});
 	enableTrading.addEventListener('click', function(){
 		localStorage.tradingEnabled=bp.tradingEnabled=1;
-		chrome.browserAction.setIcon({path: 'robot_trading_on.png'});
+		bp.chrome.browserAction.setIcon({path: 'robot_trading_on.png'});
 		refreshtable();
 	});
 	disableTrading.addEventListener('click', function(){
 		localStorage.tradingEnabled=bp.tradingEnabled=0;
-		chrome.browserAction.setIcon({path: 'robot_trading_off.png'});
+		bp.chrome.browserAction.setIcon({path: 'robot_trading_off.png'});
 		refreshtable();
 	});
 	zoomIn.addEventListener('click', function(e){

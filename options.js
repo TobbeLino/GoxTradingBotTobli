@@ -158,10 +158,10 @@ function save() {
 	bp.schedUpdateInfo(10);
 
 	localStorage.tradingEnabled=bp.tradingEnabled=(document.getElementById("tradingEnabled").checked?1:0);
-	if (bp.tradingEnabled) {
-		chrome.browserAction.setIcon({path: 'robot_trading_on.png'});
+	if (bp.tradingEnabled==1) {
+		bp.chrome.browserAction.setIcon({path: 'robot_trading_on.png'});
 	} else {
-		chrome.browserAction.setIcon({path: 'robot_trading_off.png'});
+		bp.chrome.browserAction.setIcon({path: 'robot_trading_off.png'});
 	}
 	localStorage.tradingDisabledOnStart=bp.tradingDisabledOnStart=(document.getElementById("tradingDisabledOnStart").checked?1:0);
 		
